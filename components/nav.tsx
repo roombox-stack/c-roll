@@ -1,20 +1,15 @@
-// Sticky top navigation.
+// Sticky top navigation — c-roll design.
 //
-// Layout per design: SHOWSIDE wordmark · topic nav (Discover / Music / Sports
-// / Racing) · search icon · outlined Upload button · profile avatar (when
-// signed in). No inline search bar — the /search page is one click away.
-//
-// This is an async server component so it can read the Supabase session and
-// show the right CTA (avatar or "Sign in" link).
+// Left: SHOWSIDE wordmark · Center: topic nav · Right: search icon, Upload (red), avatar
 
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 
 const TOPIC_NAV: Array<{ href: string; label: string }> = [
-  { href: '/', label: 'Discover' },
-  { href: '/?type=artist', label: 'Music' },
+  { href: '/', label: 'Browse' },
+  { href: '/?type=artist', label: 'Artists' },
   { href: '/?type=team', label: 'Sports' },
-  { href: '/?type=event_brand', label: 'Racing' },
+  { href: '/?type=event_brand', label: 'Events' },
 ];
 
 interface SessionView {
@@ -27,8 +22,6 @@ async function getSessionView(): Promise<SessionView | null> {
   const { data } = await supabase.auth.getUser();
   const user = data.user;
   if (!user) return null;
-  // username + display_name are written into user_metadata by /api/auth/signup.
-  // Reading them here avoids a second DB round-trip per page.
   const metadata = (user.user_metadata ?? {}) as {
     username?: unknown;
     display_name?: unknown;
@@ -61,18 +54,20 @@ export async function Nav() {
   const session = await getSessionView();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-ash/60 bg-ink/90 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-7xl items-center gap-2 px-4">
-        <Link href="/" className="text-base font-bold tracking-[0.18em] text-white">
+    <header className="sticky top-0 z-40 border-b border-white/5 bg-ink/90 backdrop-blur">
+      <div className="mx-auto flex h-14 max-w-7xl items-center gap-4 px-4">
+        {/* Wordmark */}
+        <Link href="/" className="shrink-0 text-sm font-bold tracking-[0.2em] text-white">
           SHOWSIDE
         </Link>
 
-        <nav className="ml-4 hidden items-center gap-1 md:flex">
+        {/* Center nav */}
+        <nav className="ml-4 hidden items-center gap-0.5 md:flex">
           {TOPIC_NAV.map((item) => (
             <Link
               key={item.label}
               href={item.href}
-              className="rounded px-3 py-1.5 text-sm text-gray-300 transition hover:bg-ash hover:text-white"
+              className="rounded-md px-3 py-1.5 text-sm text-gray-400 transition hover:bg-white/5 hover:text-white"
             >
               {item.label}
             </Link>
@@ -80,14 +75,15 @@ export async function Nav() {
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
+          {/* Search icon */}
           <Link
             href="/search"
             aria-label="Search"
-            className="rounded p-2 text-gray-300 hover:bg-ash hover:text-white"
+            className="rounded-md p-2 text-gray-400 transition hover:bg-white/5 hover:text-white"
           >
             <svg
-              width="18"
-              height="18"
+              width="17"
+              height="17"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -100,17 +96,18 @@ export async function Nav() {
             </svg>
           </Link>
 
+          {/* Upload — red fill */}
           <Link
             href="/upload"
-            className="inline-flex items-center gap-2 rounded-md border border-ash bg-smoke px-3 py-1.5 text-sm font-medium text-white hover:bg-ash"
+            className="inline-flex items-center gap-1.5 rounded-md bg-croll px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-croll/90"
           >
             <svg
-              width="14"
-              height="14"
+              width="13"
+              height="13"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="2"
+              strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
             >
@@ -120,6 +117,7 @@ export async function Nav() {
             Upload
           </Link>
 
+          {/* Avatar or sign in */}
           {session ? (
             <Link
               href={`/profile/${session.username}`}
@@ -129,14 +127,14 @@ export async function Nav() {
                   : `@${session.username}`
               }
               aria-label="My profile"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-ash bg-smoke text-xs font-semibold text-gray-200 transition hover:bg-ash hover:text-white"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs font-semibold text-gray-200 transition hover:bg-white/10 hover:text-white"
             >
               {initialsFor(session.displayName ?? session.username)}
             </Link>
           ) : (
             <Link
               href="/signin"
-              className="hidden rounded-md px-3 py-1.5 text-sm text-gray-300 hover:bg-ash hover:text-white sm:inline-block"
+              className="hidden rounded-md px-3 py-1.5 text-sm text-gray-400 transition hover:bg-white/5 hover:text-white sm:inline-block"
             >
               Sign in
             </Link>

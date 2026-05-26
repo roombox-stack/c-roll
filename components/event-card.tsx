@@ -3,6 +3,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { BLUR_DATA_URL } from '@/lib/blur-placeholder';
 import { formatCount, formatEventDate } from './format';
 
 export type EventCardData = {
@@ -42,6 +43,8 @@ export function EventCard({
                 fill
                 sizes="120px"
                 className="object-cover"
+                placeholder="blur"
+                blurDataURL={BLUR_DATA_URL}
                 unoptimized
               />
             </div>

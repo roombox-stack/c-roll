@@ -5,6 +5,8 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { BLUR_DATA_URL } from '@/lib/blur-placeholder';
+import { CardLikeButton } from './card-like-button';
 import { formatCount, formatDuration } from './format';
 
 export type MediaCardData = {
@@ -62,65 +64,78 @@ export function MediaCard({
   const aspect = size === 'lg' ? 'aspect-[3/4]' : 'aspect-video';
 
   return (
-    <Link
-      href={`/watch/${media.id}`}
-      className="group relative block overflow-hidden rounded-lg bg-smoke transition-transform hover:scale-[1.02]"
-    >
-      <div className={`relative ${aspect}`}>
-        {thumb ? (
-          <Image
-            src={thumb}
-            alt={media.caption ?? media.song_tag ?? ''}
-            fill
-            sizes={size === 'lg' ? '(min-width:768px) 33vw, 50vw' : '(min-width:768px) 25vw, 50vw'}
-            className="object-cover"
-            unoptimized
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center bg-ash text-xs text-gray-500">
-            processing…
-          </div>
-        )}
-
-        {/* gradient + bottom labels */}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/0 to-black/0" />
-
-        {isVideo && (
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <div className="rounded-full bg-white/85 p-2.5 opacity-90 transition group-hover:scale-110 group-hover:opacity-100">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="black">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            </div>
-          </div>
-        )}
-
-        {isVideo && media.is_full_song ? (
-          <FullSongBadge className="absolute left-2 top-2" />
-        ) : null}
-
-        {isVideo && media.duration_sec ? (
-          <span className="absolute bottom-2 right-2 rounded bg-black/70 px-1.5 py-0.5 text-[11px] tabular-nums">
-            {formatDuration(media.duration_sec)}
-          </span>
-        ) : null}
-
-        <div className="absolute inset-x-0 bottom-0 p-2.5 text-xs text-white">
-          {(media.song_tag || media.caption) && (
-            <div className="truncate text-sm font-medium">{media.song_tag ?? media.caption}</div>
-          )}
-          {showEventLabel && media.event && (
-            <div className="truncate text-[11px] text-gray-300">
-              {media.event.name}
-              {media.event.city ? ` · ${media.event.city}` : ''}
+    // Outer div carries `group` so hover effects (play button scale, like button
+    // fade-in) work across the whole card. The <Link> and <CardLikeButton> are
+    // siblings — NOT nested — so the like button click won't trigger navigation.
+    <div className="group relative overflow-hidden rounded-lg bg-smoke transition-transform hover:scale-[1.02]">
+      <Link href={`/watch/${media.id}`} className="block">
+        <div className={`relative ${aspect}`}>
+          {thumb ? (
+            <Image
+              src={thumb}
+              alt={media.caption ?? media.song_tag ?? ''}
+              fill
+              sizes={size === 'lg' ? '(min-width:768px) 33vw, 50vw' : '(min-width:768px) 25vw, 50vw'}
+              className="object-cover"
+              placeholder="blur"
+              blurDataURL={BLUR_DATA_URL}
+              unoptimized
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center bg-ash text-xs text-gray-500">
+              processing…
             </div>
           )}
-          <div className="mt-1 flex gap-3 text-[11px] text-gray-300">
-            {isVideo && <span>{formatCount(media.view_count)} views</span>}
-            <span>♥ {formatCount(media.like_count)}</span>
+
+          {/* gradient overlay */}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/0 to-black/0" />
+
+          {isVideo && (
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <div className="rounded-full bg-white/85 p-2.5 opacity-90 transition group-hover:scale-110 group-hover:opacity-100">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="black">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </div>
+            </div>
+          )}
+
+          {isVideo && media.is_full_song ? (
+            <FullSongBadge className="absolute left-2 top-2" />
+          ) : null}
+
+          {isVideo && media.duration_sec ? (
+            <span className="absolute bottom-2 right-2 rounded bg-black/70 px-1.5 py-0.5 text-[11px] tabular-nums">
+              {formatDuration(media.duration_sec)}
+            </span>
+          ) : null}
+
+          {/* bottom text labels */}
+          <div className="absolute inset-x-0 bottom-0 p-2.5 text-xs text-white">
+            {(media.song_tag || media.caption) && (
+              <div className="truncate text-sm font-medium">{media.song_tag ?? media.caption}</div>
+            )}
+            {showEventLabel && media.event && (
+              <div className="truncate text-[11px] text-gray-300">
+                {media.event.name}
+                {media.event.city ? ` · ${media.event.city}` : ''}
+              </div>
+            )}
+            {isVideo && (
+              <div className="mt-1 text-[11px] text-gray-300">
+                {formatCount(media.view_count)} views
+              </div>
+            )}
           </div>
         </div>
-      </div>
-    </Link>
+      </Link>
+
+      {/* Like button — sibling of the Link so it doesn't trigger navigation */}
+      <CardLikeButton
+        mediaId={media.id}
+        initialLikeCount={media.like_count}
+        className="absolute right-2 top-2 z-10"
+      />
+    </div>
   );
 }

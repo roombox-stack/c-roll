@@ -4,6 +4,7 @@
 
 import type { Metadata } from 'next';
 import { Nav } from '@/components/nav';
+import { Footer } from '@/components/footer';
 import { SearchView } from './search-view';
 
 export const metadata: Metadata = {
@@ -17,12 +18,13 @@ export default function SearchPage({
   searchParams: { q?: string };
 }) {
   return (
-    <div className="min-h-screen bg-ink text-white">
+    <div className="flex min-h-screen flex-col bg-ink text-white">
       <Nav />
-      <main className="mx-auto max-w-3xl px-4 py-8">
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
         <h1 className="sr-only">Search</h1>
         <SearchView initialQuery={searchParams.q ?? ''} />
       </main>
+      <Footer />
     </div>
   );
 }

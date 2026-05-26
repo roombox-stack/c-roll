@@ -9,6 +9,7 @@
 
 import Link from 'next/link';
 import { Nav } from '@/components/nav';
+import { Footer } from '@/components/footer';
 import { MediaCard, type MediaCardData } from '@/components/media-card';
 import { EntityCard, type EntityCardData } from '@/components/entity-card';
 import { EventCard, type EventCardData } from '@/components/event-card';
@@ -230,27 +231,3 @@ function FeaturedClip({ media }: { media: FeaturedMedia }) {
   );
 }
 
-function Footer() {
-  return (
-    <footer className="mt-16 border-t border-ash bg-smoke">
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-6 px-4 py-6 text-xs text-gray-400">
-        <Link href="/about" className="hover:text-white">
-          About
-        </Link>
-        <Link href="/contact" className="hover:text-white">
-          Contact
-        </Link>
-        <Link href="/dmca" className="hover:text-white">
-          DMCA
-        </Link>
-        <Link href="/terms" className="hover:text-white">
-          Terms
-        </Link>
-        <Link href="/privacy" className="hover:text-white">
-          Privacy
-        </Link>
-        <span className="ml-auto text-gray-500">© Showside</span>
-      </div>
-    </footer>
-  );
-}

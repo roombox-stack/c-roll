@@ -13,6 +13,7 @@ import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getCurrentUser } from '@/lib/auth';
 import { Nav } from '@/components/nav';
+import { Footer } from '@/components/footer';
 import { MediaCard, type MediaCardData } from '@/components/media-card';
 import { EventCard } from '@/components/event-card';
 import { SignOutButton } from '@/components/sign-out-button';
@@ -262,6 +263,7 @@ export default async function ProfilePage({ params }: { params: { username: stri
           {formatEventDate(profile.created_at)}
         </p>
       </main>
+      <Footer />
     </div>
   );
 }

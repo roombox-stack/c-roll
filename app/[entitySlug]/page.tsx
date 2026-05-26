@@ -1,13 +1,15 @@
 // /[entitySlug] — Entity page (artist / team / event brand / venue).
 //
-// Layout (top → bottom):
-//   1. Hero — verified/genre badges, name, archive summary, Follow + fan count
-//             on the left; 2×3 grid of top media thumbnails on the right.
-//   2. Stats strip — 4 divider-separated tiles below the hero.
-//   3. Fan highlights — pills row + 1-hero + 4-small grid.
-//   4. Most filmed songs — 5 song cards with colored progress bars.
-//   5. Recent shows — 4 colored gradient event cards (no thumb strip).
-//   6. Full archive — single accordion row with database icon.
+// Visual redesign matching the c-roll design system:
+//   1. Hero — cinematic bg, massive Archivo Black name, genre pill, CTA buttons,
+//             2×3 thumbnail grid on the right.
+//   2. Stats strip — horizontal chip row with pipe dividers.
+//   3. Fan highlights — red // eyebrow, heading, filter pills, 1-hero + grid.
+//   4. Most filmed songs — red // eyebrow, ranked list with color swatches.
+//   5. Recent shows — red // eyebrow, 4-card gradient grid, LAST SHOW badge.
+//   6. Archive bar — full-width dark section with expandable year list.
+//
+// DATA FETCHING IS COMPLETELY UNCHANGED. Only the visual/component layer changed.
 
 import Link from 'next/link';
 import Image from 'next/image';
@@ -15,9 +17,11 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { Nav } from '@/components/nav';
-import { FullSongBadge } from '@/components/media-card';
+import { HighlightsGrid } from '@/components/highlights-grid';
+import { Footer } from '@/components/footer';
+import { BLUR_DATA_URL } from '@/lib/blur-placeholder';
 import { type EntityType, type SectionTag } from '@/lib/types';
-import { formatCount, formatDuration, formatEventDate } from '@/components/format';
+import { formatCount, formatEventDate } from '@/components/format';
 
 export const dynamic = 'force-dynamic';
 
@@ -104,7 +108,13 @@ export async function generateMetadata({
       title,
       description,
       type: 'website',
-      images: entity.hero_image_url ? [{ url: entity.hero_image_url }] : undefined,
+      images: entity.hero_image_url ? [{ url: entity.hero_image_url, width: 1200, height: 630 }] : undefined,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: entity.hero_image_url ? [entity.hero_image_url] : undefined,
     },
   };
 }
@@ -209,72 +219,128 @@ export default async function EntityPage({
       <Nav />
 
       {/* ── Hero ────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden border-b border-ash">
+      <section className="relative overflow-hidden bg-ink">
+        {/* Background: hero image at low opacity behind a dark gradient */}
         {entity.hero_image_url ? (
           <Image
             src={entity.hero_image_url}
             alt=""
             fill
             sizes="100vw"
-            className="object-cover opacity-20"
+            className="object-cover object-top opacity-25"
             unoptimized
             priority
           />
         ) : null}
-        <div className="relative bg-gradient-to-r from-ink via-ink/95 to-ink/60">
-          <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 lg:grid-cols-[1fr_540px] lg:py-16">
-            <div className="space-y-5">
-              <div className="flex flex-wrap items-center gap-2">
-                {entity.verified ? <VerifiedBadge /> : null}
-                {entity.genre ? <GenreBadge>{entity.genre}</GenreBadge> : null}
+        {/* Gradient: full black on left so text is always readable */}
+        <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/90 to-ink/50" />
+        <div className="absolute inset-0 bg-gradient-to-t from-ink via-transparent to-transparent" />
+
+        <div className="relative mx-auto max-w-7xl px-4 pb-16 pt-14 lg:pb-20 lg:pt-16">
+          <div className="grid items-start gap-10 lg:grid-cols-[1fr_460px] lg:gap-14">
+
+            {/* Left column */}
+            <div className="space-y-6">
+
+              {/* Eyebrow / breadcrumb */}
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[10px] uppercase tracking-widest">
+                <span className="text-croll">In Showside</span>
+                {allEvents.length > 0 && (
+                  <>
+                    <span className="text-ash">·</span>
+                    <span className="text-gray-500">{allEvents.length} {allEvents.length === 1 ? 'Show' : 'Shows'}</span>
+                  </>
+                )}
+                {totalMedia > 0 && (
+                  <>
+                    <span className="text-ash">·</span>
+                    <span className="text-gray-500">{formatCount(totalMedia)} Clips</span>
+                  </>
+                )}
               </div>
-              <h1 className="text-4xl font-bold tracking-tight md:text-6xl">{entity.name}</h1>
-              <p className="text-sm text-gray-400 md:text-base">
-                {formatCount(totalMedia)} photos &amp; videos across{' '}
-                {formatCount(allEvents.length)}{' '}
-                {allEvents.length === 1 ? 'show' : 'shows'}
-                {earliestYear ? ` · archive from ${earliestYear}` : ''}
-              </p>
-              <div className="flex items-center gap-3 pt-1">
+
+              {/* Artist name — Archivo Black, massive */}
+              <h1 className="font-display text-[clamp(2.75rem,9vw,6.5rem)] font-black leading-[0.93] tracking-tight text-white">
+                {entity.name}
+              </h1>
+
+              {/* Genre + verified pills */}
+              <div className="flex flex-wrap items-center gap-2">
+                {entity.verified ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-gray-300">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                      <path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2zm-1.2 14.6L6.6 12.4l1.4-1.4 2.8 2.8 5.6-5.6 1.4 1.4-7 7z" />
+                    </svg>
+                    Verified
+                  </span>
+                ) : null}
+                {entity.genre ? (
+                  <span className="rounded-full border border-white/15 px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-gray-300">
+                    {entity.genre}
+                  </span>
+                ) : null}
+              </div>
+
+              {/* Bio */}
+              {entity.bio ? (
+                <p className="max-w-md text-sm leading-relaxed text-gray-400">{entity.bio}</p>
+              ) : null}
+
+              {/* CTA buttons */}
+              <div className="flex flex-wrap items-center gap-3 pt-1">
+                {recentEvents[0] ? (
+                  <Link
+                    href={`/${entity.slug}/${recentEvents[0].slug}`}
+                    className="inline-flex items-center gap-2 rounded-md border border-white/20 bg-white/5 px-5 py-2.5 text-sm font-medium text-white backdrop-blur transition hover:bg-white/10"
+                  >
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                    Watch latest show
+                  </Link>
+                ) : null}
                 <button
                   type="button"
-                  className="rounded-md border border-ash bg-smoke/60 px-5 py-2 text-sm font-medium text-white hover:bg-ash"
+                  className="inline-flex items-center gap-2 rounded-md border border-white/20 bg-white/5 px-5 py-2.5 text-sm font-medium text-white backdrop-blur transition hover:bg-white/10"
                 >
                   Follow
+                  {entity.follower_count > 0 ? (
+                    <span className="text-gray-400">· {formatCount(entity.follower_count)}</span>
+                  ) : null}
                 </button>
-                <span className="text-sm text-gray-400">
-                  {formatCount(entity.follower_count)} fans following
-                </span>
               </div>
             </div>
 
-            <HeroGrid media={topMedia} />
+            {/* Right column — 3×2 hero grid */}
+            <HeroGrid media={topMedia} entitySlug={entity.slug} />
           </div>
         </div>
       </section>
 
       {/* ── Stats strip ─────────────────────────────────────────────────── */}
-      <section className="border-b border-ash bg-smoke/40">
-        <div className="mx-auto grid max-w-7xl grid-cols-2 divide-x divide-ash md:grid-cols-4">
-          <StatTile value={formatCount(totalMedia)} label="Photos & videos" />
-          <StatTile value={formatCount(allEvents.length)} label="Shows covered" />
-          <StatTile value={formatCount(contribKeys.size)} label="Contributors" />
-          <StatTile value={earliestYear ? String(earliestYear) : '—'} label="Earliest show" />
+      <div className="border-y border-white/5 bg-smoke/30">
+        <div className="mx-auto max-w-7xl overflow-x-auto px-4">
+          <div className="flex min-w-max items-stretch divide-x divide-white/5">
+            <StatChip label="CLIPS" value={formatCount(videoCount)} />
+            <StatChip label="PHOTOS" value={formatCount(photoCount)} />
+            <StatChip label="SHOWS COVERED" value={String(allEvents.length)} />
+            <StatChip label="CONTRIBUTORS" value={formatCount(contribKeys.size)} />
+            {earliestYear ? <StatChip label="SINCE" value={String(earliestYear)} /> : null}
+          </div>
         </div>
-      </section>
+      </div>
 
-      <main className="mx-auto max-w-7xl space-y-14 px-4 py-12">
+      <main className="mx-auto max-w-7xl space-y-20 px-4 py-16">
+
         {/* ── Fan highlights ──────────────────────────────────────────── */}
         <section>
-          <SectionHeader
-            title="Fan highlights"
-            right={
-              totalMedia > 0
-                ? `see all ${formatCount(totalMedia)} →`
-                : null
-            }
-          />
-          <div className="mt-4 flex flex-wrap gap-2">
+          <RedEyebrow>FAN HIGHLIGHTS</RedEyebrow>
+          <h2 className="mt-2 font-heading text-2xl font-bold text-white md:text-3xl">
+            The best moments, by the people who were there.
+          </h2>
+
+          {/* Filter pills */}
+          <div className="mt-5 flex flex-wrap gap-2">
             {HIGHLIGHTS.map((h) => (
               <FilterPill
                 key={h.value}
@@ -285,9 +351,10 @@ export default async function EntityPage({
               </FilterPill>
             ))}
           </div>
+
           {activeSong ? (
             <p className="mt-3 text-sm text-gray-400">
-              Filtered to “{activeSong}” —{' '}
+              Filtered to &ldquo;{activeSong}&rdquo; —{' '}
               <Link
                 href={`/${entity.slug}${activeFilter === 'best' ? '' : `?filter=${activeFilter}`}`}
                 className="text-white underline"
@@ -297,25 +364,25 @@ export default async function EntityPage({
             </p>
           ) : null}
 
-          <div className="mt-5">
-            {highlightsMedia.length === 0 ? (
-              <p className="rounded-lg border border-ash bg-smoke p-6 text-sm text-gray-400">
-                No highlights match this filter yet.
-              </p>
-            ) : (
-              <HighlightsGrid media={highlightsMedia} />
-            )}
+          <div className="mt-6">
+            <HighlightsGrid items={highlightsMedia} />
           </div>
         </section>
 
         {/* ── Most filmed songs ───────────────────────────────────────── */}
         {topSongs.length > 0 ? (
           <section>
-            <SectionHeader title="Most filmed songs" right="how this works →" />
-            <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
+            <RedEyebrow>MOST FILMED SONGS</RedEyebrow>
+            <h2 className="mt-2 font-heading text-2xl font-bold text-white md:text-3xl">
+              The ones that broke phones across {allEvents.length}{' '}
+              {allEvents.length === 1 ? 'show' : 'shows'}.
+            </h2>
+
+            <div className="mt-6 grid grid-cols-1 gap-px bg-white/5 md:grid-cols-5">
               {topSongs.map(([song, count], i) => (
                 <SongCard
                   key={song}
+                  rank={i + 1}
                   song={song}
                   count={count}
                   maxCount={maxSongCount}
@@ -330,72 +397,85 @@ export default async function EntityPage({
         {/* ── Recent shows ────────────────────────────────────────────── */}
         {recentEvents.length > 0 ? (
           <section>
-            <SectionHeader
-              title="Recent shows"
-              right={
-                allEvents.length > 4
-                  ? `all ${formatCount(allEvents.length)} shows →`
-                  : null
-              }
-            />
-            <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {recentEvents.map((ev) => (
-                <ColoredEventCard
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <RedEyebrow>RECENT SHOWS</RedEyebrow>
+                <h2 className="mt-2 font-heading text-2xl font-bold text-white md:text-3xl">
+                  Latest nights, freshest uploads.
+                </h2>
+              </div>
+              {allEvents.length > 4 ? (
+                <Link
+                  href={`/${entity.slug}#archive`}
+                  className="shrink-0 text-sm text-gray-500 transition hover:text-white"
+                >
+                  All {allEvents.length} Shows →
+                </Link>
+              ) : null}
+            </div>
+
+            <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+              {recentEvents.map((ev, i) => (
+                <EventCard
                   key={ev.id}
                   event={ev}
-                  entitySlug={entity.slug}
+                  isLatest={i === 0}
                   href={`/${entity.slug}/${ev.slug}`}
                 />
               ))}
             </div>
           </section>
         ) : null}
-
-        {/* ── Full archive ────────────────────────────────────────────── */}
-        {allEvents.length > 0 ? (
-          <section id="archive">
-            <ArchiveCard
-              entitySlug={entity.slug}
-              events={allEvents}
-              earliestYear={earliestYear}
-            />
-          </section>
-        ) : null}
       </main>
+
+      {/* ── Archive bar ─────────────────────────────────────────────────── */}
+      {allEvents.length > 0 ? (
+        <section id="archive" className="border-t border-white/5 bg-smoke/40">
+          <div className="mx-auto max-w-7xl px-4 py-16">
+            <RedEyebrow>SHOWSIDE ARCHIVE</RedEyebrow>
+            <div className="mt-4 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="font-heading text-3xl font-bold text-white md:text-4xl">
+                  All {allEvents.length} {allEvents.length === 1 ? 'show' : 'shows'} &middot;{' '}
+                  {formatCount(totalMedia)} clips
+                  {earliestYear ? ` · since ${earliestYear}` : ''}
+                </p>
+                <p className="mt-2 text-sm text-gray-500">
+                  Every show, every setlist, every upload — by date and venue.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-10">
+              <ArchiveList events={allEvents} entitySlug={entity.slug} />
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }}
       />
+      <Footer />
     </div>
   );
 }
 
-// ── Hero badges ──────────────────────────────────────────────────────────────
+// ── Design tokens / shared primitives ────────────────────────────────────────
 
-function VerifiedBadge() {
+/** Red // LABEL eyebrow used before every section heading */
+function RedEyebrow({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-700/60 bg-emerald-900/30 px-3 py-1 text-xs font-medium text-emerald-300">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-        <path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2zm-1.2 14.6L6.6 12.4l1.4-1.4 2.8 2.8 5.6-5.6 1.4 1.4-7 7z" />
-      </svg>
-      Verified
-    </span>
+    <p className="font-mono text-[10px] font-semibold uppercase tracking-widest text-croll">
+      // {children}
+    </p>
   );
 }
 
-function GenreBadge({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="inline-flex items-center rounded-full border border-purple-700/60 bg-purple-900/30 px-3 py-1 text-xs font-medium text-purple-300">
-      {children}
-    </span>
-  );
-}
+// ── Hero grid (3 columns × 2 rows) ───────────────────────────────────────────
 
-// ── Hero grid (2×3 thumbnails) ───────────────────────────────────────────────
-
-function HeroGrid({ media }: { media: MediaRow[] }) {
-  // Always render 6 slots so the grid keeps shape with sparse data.
+function HeroGrid({ media, entitySlug: _entitySlug }: { media: MediaRow[]; entitySlug: string }) {
   const slots = Array.from({ length: 6 }, (_, i) => media[i] ?? null);
   return (
     <div className="grid grid-cols-3 grid-rows-2 gap-2">
@@ -408,46 +488,52 @@ function HeroGrid({ media }: { media: MediaRow[] }) {
 
 function HeroThumb({ media }: { media: MediaRow | null }) {
   if (!media) {
-    return <div className="aspect-square rounded-md bg-smoke/60" />;
+    return <div className="aspect-[4/5] rounded-lg bg-white/5" />;
   }
   const thumb =
     media.thumbnail_url ?? (media.file_type === 'photo' ? media.storage_url : null);
   const isVideo = media.file_type === 'video';
   const label = media.song_tag ?? media.caption ?? '';
+
   return (
     <Link
       href={`/watch/${media.id}`}
-      className="group relative block aspect-square overflow-hidden rounded-md bg-smoke"
+      className="group relative block aspect-[4/5] overflow-hidden rounded-lg bg-smoke"
     >
       {thumb ? (
         <Image
           src={thumb}
           alt={label}
           fill
-          sizes="180px"
-          className="object-cover"
+          sizes="160px"
+          className="object-cover transition group-hover:scale-105"
+          placeholder="blur"
+          blurDataURL={BLUR_DATA_URL}
           unoptimized
         />
-      ) : null}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/0 to-black/20" />
+      ) : (
+        <div className="absolute inset-0 bg-gradient-to-br from-ash to-smoke" />
+      )}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/10" />
 
       {isVideo ? (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="rounded-full bg-white/80 p-2 opacity-90 transition group-hover:scale-110">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="black" aria-hidden>
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 transition group-hover:opacity-100">
+          <div className="rounded-full bg-white/90 p-2">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="black" aria-hidden>
               <path d="M8 5v14l11-7z" />
             </svg>
           </div>
         </div>
       ) : null}
 
-      <span className="absolute right-1.5 top-1.5 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-white">
-        {formatCount(media.view_count)}
-        {media.view_count > 0 ? ' views' : ''}
-      </span>
+      {isVideo && media.duration_sec ? (
+        <span className="absolute bottom-1.5 right-1.5 rounded bg-black/70 px-1.5 py-0.5 font-mono text-[9px] tabular-nums text-white">
+          {Math.floor(media.duration_sec / 60)}:{String(Math.round(media.duration_sec % 60)).padStart(2, '0')}
+        </span>
+      ) : null}
 
       {label ? (
-        <span className="absolute bottom-1.5 left-1.5 right-1.5 truncate text-xs font-medium text-white">
+        <span className="absolute inset-x-1.5 bottom-1.5 truncate text-[10px] font-medium text-white">
           {label}
         </span>
       ) : null}
@@ -455,32 +541,13 @@ function HeroThumb({ media }: { media: MediaRow | null }) {
   );
 }
 
-// ── Stat tile ────────────────────────────────────────────────────────────────
+// ── Stats strip chip ─────────────────────────────────────────────────────────
 
-function StatTile({ value, label }: { value: string; label: string }) {
+function StatChip({ label, value }: { label: string; value: string }) {
   return (
-    <div className="px-4 py-6 text-center md:py-8">
-      <div className="text-3xl font-semibold tabular-nums md:text-4xl">{value}</div>
-      <div className="mt-1 text-xs uppercase tracking-wider text-gray-500">{label}</div>
-    </div>
-  );
-}
-
-// ── Section header (title + optional right text/link) ───────────────────────
-
-function SectionHeader({
-  title,
-  right,
-}: {
-  title: string;
-  right?: string | null;
-}) {
-  return (
-    <div className="flex items-baseline justify-between gap-3">
-      <h2 className="text-2xl font-semibold">{title}</h2>
-      {right ? (
-        <span className="text-sm text-gray-400 hover:text-white">{right}</span>
-      ) : null}
+    <div className="flex flex-col items-start justify-center px-5 py-4">
+      <span className="font-mono text-[9px] uppercase tracking-widest text-gray-600">{label}</span>
+      <span className="mt-0.5 font-heading text-lg font-bold tabular-nums text-white">{value}</span>
     </div>
   );
 }
@@ -501,8 +568,8 @@ function FilterPill({
       href={href}
       className={`rounded-full border px-4 py-1.5 text-sm font-medium transition ${
         active
-          ? 'border-white/20 bg-white/10 text-white'
-          : 'border-ash text-gray-300 hover:border-gray-500 hover:text-white'
+          ? 'border-white bg-white text-ink'
+          : 'border-white/10 bg-white/5 text-gray-400 hover:border-white/20 hover:text-white'
       }`}
     >
       {children}
@@ -510,200 +577,71 @@ function FilterPill({
   );
 }
 
-// ── Fan highlights grid (1 hero + 4 small) ───────────────────────────────────
+// ── Song card ────────────────────────────────────────────────────────────────
 
-function HighlightsGrid({ media }: { media: MediaRow[] }) {
-  const hero = media[0];
-  const rest = media.slice(1, 5);
-  if (!hero) return null;
-  return (
-    <div className="grid grid-cols-1 gap-3 md:grid-cols-[1.6fr_1fr_1fr] md:grid-rows-2">
-      <div className="md:col-span-1 md:row-span-2">
-        <HighlightHeroCard media={hero} />
-      </div>
-      {rest.map((m) => (
-        <HighlightCard key={m.id} media={m} />
-      ))}
-    </div>
-  );
-}
-
-function HighlightHeroCard({ media }: { media: MediaRow }) {
-  const thumb =
-    media.thumbnail_url ?? (media.file_type === 'photo' ? media.storage_url : null);
-  const isVideo = media.file_type === 'video';
-  return (
-    <Link
-      href={`/watch/${media.id}`}
-      className="group relative block h-full overflow-hidden rounded-lg bg-smoke"
-    >
-      <div className="relative h-full min-h-[280px] md:min-h-[420px]">
-        {thumb ? (
-          <Image
-            src={thumb}
-            alt=""
-            fill
-            sizes="(min-width:768px) 50vw, 100vw"
-            className="object-cover"
-            unoptimized
-          />
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-purple-950 to-ink" />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-black/30" />
-
-        {/* View badge top-left */}
-        <span className="absolute left-3 top-3 rounded-md bg-purple-600/90 px-2 py-1 text-xs font-semibold text-white">
-          {formatCount(media.view_count)} views
-        </span>
-
-        {isVideo && media.is_full_song ? (
-          <FullSongBadge className="absolute right-3 top-3" />
-        ) : null}
-
-        {isVideo ? (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="rounded-full bg-white/85 p-4 opacity-90 transition group-hover:scale-110">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="black" aria-hidden>
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            </div>
-          </div>
-        ) : null}
-
-        {isVideo && media.duration_sec ? (
-          <span className="absolute bottom-3 right-3 rounded bg-black/70 px-1.5 py-0.5 text-xs tabular-nums">
-            {formatDuration(media.duration_sec)}
-          </span>
-        ) : null}
-
-        <div className="absolute inset-x-0 bottom-0 space-y-1 p-4">
-          <div className="text-base font-semibold">
-            {media.song_tag ?? media.caption ?? 'Untitled clip'}
-          </div>
-          <div className="text-xs text-gray-300">
-            <span>♥ {formatCount(media.like_count)}</span>
-            {media.section_tag ? <span> · {sectionLabel(media.section_tag)}</span> : null}
-          </div>
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-function HighlightCard({ media }: { media: MediaRow }) {
-  const thumb =
-    media.thumbnail_url ?? (media.file_type === 'photo' ? media.storage_url : null);
-  const isVideo = media.file_type === 'video';
-  return (
-    <Link
-      href={`/watch/${media.id}`}
-      className="group relative block overflow-hidden rounded-lg bg-smoke"
-    >
-      <div className="relative aspect-video">
-        {thumb ? (
-          <Image
-            src={thumb}
-            alt=""
-            fill
-            sizes="240px"
-            className="object-cover"
-            unoptimized
-          />
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-ash to-smoke" />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
-
-        {isVideo && media.is_full_song ? (
-          <FullSongBadge className="absolute left-2 top-2" />
-        ) : null}
-
-        {isVideo ? (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="rounded-full bg-white/80 p-2.5 opacity-90 transition group-hover:scale-110">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="black" aria-hidden>
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            </div>
-          </div>
-        ) : null}
-
-        {isVideo && media.duration_sec ? (
-          <span className="absolute bottom-2 right-2 rounded bg-black/70 px-1.5 py-0.5 text-[11px] tabular-nums">
-            {formatDuration(media.duration_sec)}
-          </span>
-        ) : null}
-
-        <div className="absolute inset-x-0 bottom-0 p-2.5 text-xs">
-          <div className="truncate text-sm font-medium">
-            {media.song_tag ?? media.caption ?? 'Untitled'}
-          </div>
-          <div className="mt-0.5 text-[11px] text-gray-300">
-            ♥ {formatCount(media.like_count)}
-          </div>
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-// ── Song card with colored progress bar ─────────────────────────────────────
-
-const SONG_BAR_COLORS = [
-  'bg-purple-500',
-  'bg-emerald-500',
-  'bg-orange-500',
-  'bg-amber-400',
-  'bg-blue-500',
+// Deterministic color palettes per rank slot — placeholder for album art extraction.
+const SONG_PALETTES: string[][] = [
+  ['#e8342a', '#f59e0b', '#6366f1', '#10b981', '#ec4899', '#f97316'],
+  ['#6366f1', '#3b82f6', '#f59e0b', '#14b8a6', '#ef4444', '#8b5cf6'],
+  ['#f97316', '#84cc16', '#3b82f6', '#a855f7', '#f43f5e', '#06b6d4'],
+  ['#06b6d4', '#f59e0b', '#6366f1', '#10b981', '#e8342a', '#84cc16'],
+  ['#8b5cf6', '#f97316', '#22d3ee', '#84cc16', '#ef4444', '#f59e0b'],
 ];
 
 function SongCard({
+  rank,
   song,
   count,
-  maxCount,
   colorIndex,
   href,
 }: {
+  rank: number;
   song: string;
   count: number;
   maxCount: number;
   colorIndex: number;
   href: string;
 }) {
-  const pct = Math.max(8, Math.round((count / maxCount) * 100));
+  const palette = SONG_PALETTES[colorIndex % SONG_PALETTES.length];
   return (
     <Link
       href={href}
-      className="block rounded-lg border border-ash bg-smoke p-4 transition hover:border-gray-500"
+      className="group block bg-smoke p-5 transition hover:bg-ash"
     >
-      <div className="truncate font-medium">{song}</div>
-      <div className="mt-1 flex items-center gap-1.5 text-xs text-gray-400">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-          <path d="M23 7l-7 5 7 5V7z" />
-          <rect x="1" y="5" width="15" height="14" rx="2" />
-        </svg>
+      {/* Rank */}
+      <span className="font-display text-4xl font-black tabular-nums text-white/10 transition group-hover:text-white/20">
+        {String(rank).padStart(2, '0')}
+      </span>
+
+      {/* Song name */}
+      <p className="mt-3 truncate text-sm font-semibold text-white">{song}</p>
+      <p className="mt-0.5 font-mono text-[10px] uppercase tracking-wider text-gray-600">
         {formatCount(count)} clips
-      </div>
-      <div className="mt-3 h-1 overflow-hidden rounded-full bg-ash">
-        <div
-          className={`h-full rounded-full ${SONG_BAR_COLORS[colorIndex % SONG_BAR_COLORS.length]}`}
-          style={{ width: `${pct}%` }}
-        />
+      </p>
+
+      {/* Color swatch row */}
+      <div className="mt-4 flex gap-1">
+        {palette.map((color, i) => (
+          <div
+            key={i}
+            className="h-3 flex-1 rounded-sm"
+            style={{ backgroundColor: color }}
+          />
+        ))}
       </div>
     </Link>
   );
 }
 
-// ── Colored event card (Recent shows) ────────────────────────────────────────
+// ── Event card ───────────────────────────────────────────────────────────────
 
 const EVENT_GRADIENTS = [
-  'from-purple-900 via-purple-800 to-purple-950',
-  'from-emerald-900 via-emerald-800 to-emerald-950',
-  'from-amber-900 via-amber-800 to-amber-950',
-  'from-blue-900 via-blue-800 to-blue-950',
-  'from-rose-900 via-rose-800 to-rose-950',
-  'from-teal-900 via-teal-800 to-teal-950',
+  'from-violet-950 via-violet-900 to-purple-950',
+  'from-emerald-950 via-emerald-900 to-teal-950',
+  'from-amber-950 via-amber-900 to-orange-950',
+  'from-blue-950 via-blue-900 to-indigo-950',
+  'from-rose-950 via-rose-900 to-pink-950',
+  'from-cyan-950 via-cyan-900 to-sky-950',
 ];
 
 function hashIndex(s: string, mod: number): number {
@@ -712,12 +650,13 @@ function hashIndex(s: string, mod: number): number {
   return Math.abs(h) % mod;
 }
 
-function ColoredEventCard({
+function EventCard({
   event,
+  isLatest,
   href,
 }: {
   event: EventRow;
-  entitySlug: string;
+  isLatest: boolean;
   href: string;
 }) {
   const gradient = EVENT_GRADIENTS[hashIndex(event.id, EVENT_GRADIENTS.length)];
@@ -726,39 +665,44 @@ function ColoredEventCard({
       href={href}
       className={`group relative block aspect-[5/4] overflow-hidden rounded-lg bg-gradient-to-br ${gradient} transition hover:brightness-110`}
     >
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/10" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/10" />
+
+      {/* LAST SHOW badge */}
+      {isLatest ? (
+        <span className="absolute left-2.5 top-2.5 rounded bg-croll px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-widest text-white">
+          Last Show
+        </span>
+      ) : null}
+
+      {/* Play button */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="rounded-full bg-white/20 p-3 backdrop-blur transition group-hover:scale-110">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="white" aria-hidden>
+        <div className="rounded-full bg-white/15 p-3 backdrop-blur transition group-hover:bg-white/25 group-hover:scale-110">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="white" aria-hidden>
             <path d="M8 5v14l11-7z" />
           </svg>
         </div>
       </div>
-      <div className="absolute inset-x-0 bottom-0 space-y-1 p-4 text-white">
-        <div className="text-xs text-gray-300">{formatEventDate(event.event_date)}</div>
-        <div className="font-semibold leading-tight">
+
+      {/* Bottom info */}
+      <div className="absolute inset-x-0 bottom-0 space-y-0.5 p-3 text-white">
+        <p className="font-mono text-[9px] uppercase tracking-widest text-gray-400">
+          {formatEventDate(event.event_date)}
+        </p>
+        <p className="truncate text-sm font-semibold leading-tight">
           {event.venue_name}
           {event.city ? `, ${event.city}` : ''}
-        </div>
-        <div className="text-xs text-gray-300">
+        </p>
+        <p className="font-mono text-[10px] text-gray-500">
           {formatCount(event.upload_count)} uploads
-        </div>
+        </p>
       </div>
     </Link>
   );
 }
 
-// ── Full archive (accordion-style row) ───────────────────────────────────────
+// ── Archive list (year-grouped) ───────────────────────────────────────────────
 
-function ArchiveCard({
-  entitySlug,
-  events,
-  earliestYear,
-}: {
-  entitySlug: string;
-  events: EventRow[];
-  earliestYear: number | null;
-}) {
+function ArchiveList({ events, entitySlug }: { events: EventRow[]; entitySlug: string }) {
   const byYear = new Map<number, EventRow[]>();
   for (const ev of events) {
     const y = new Date(ev.event_date).getFullYear();
@@ -767,91 +711,44 @@ function ArchiveCard({
     byYear.set(y, bucket);
   }
   const years = Array.from(byYear.keys()).sort((a, b) => b - a);
-  const span = earliestYear ? `${earliestYear} to present` : 'archive';
 
   return (
-    <details className="group overflow-hidden rounded-lg border border-ash bg-smoke">
-      <summary className="flex cursor-pointer select-none items-center gap-4 p-4 hover:bg-ash/50">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-ink">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <ellipse cx="12" cy="5" rx="9" ry="3" />
-            <path d="M3 5v6c0 1.66 4.03 3 9 3s9-1.34 9-3V5" />
-            <path d="M3 11v6c0 1.66 4.03 3 9 3s9-1.34 9-3v-6" />
-          </svg>
-        </div>
-        <div className="flex-1">
-          <div className="font-semibold">
-            Full archive — {events.length} {events.length === 1 ? 'show' : 'shows'}, {span}
-          </div>
-          <div className="text-xs text-gray-400">
-            Browse every show, every setlist, every upload by date and venue
-          </div>
-        </div>
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="text-gray-500 transition group-open:rotate-90"
-          aria-hidden
-        >
-          <path d="m9 18 6-6-6-6" />
-        </svg>
-      </summary>
-      <div className="border-t border-ash">
-        {years.map((year) => (
-          <div key={year} className="border-t border-ash px-4 py-4 first:border-t-0">
-            <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-gray-400">
-              {year}
-            </h3>
-            <ul className="space-y-0.5 text-sm">
-              {byYear.get(year)!.map((ev) => (
-                <li key={ev.id}>
-                  <Link
-                    href={`/${entitySlug}/${ev.slug}`}
-                    className="flex items-center justify-between rounded px-2 py-1.5 hover:bg-ash"
-                  >
-                    <span>
-                      <span className="text-gray-500">{formatEventDate(ev.event_date)}</span>{' '}
-                      · <span className="text-white">{ev.venue_name}</span>
-                      <span className="text-gray-400">
-                        , {ev.city}
-                        {ev.state ? `, ${ev.state}` : ''}
-                      </span>
+    <div className="space-y-6">
+      {years.map((year) => (
+        <div key={year}>
+          <h3 className="mb-2 font-mono text-[10px] uppercase tracking-widest text-gray-600">
+            {year}
+          </h3>
+          <ul className="space-y-px">
+            {byYear.get(year)!.map((ev) => (
+              <li key={ev.id}>
+                <Link
+                  href={`/${entitySlug}/${ev.slug}`}
+                  className="flex items-center justify-between rounded px-2 py-2 transition hover:bg-white/5"
+                >
+                  <span className="min-w-0 flex-1 text-sm">
+                    <span className="text-gray-600">{formatEventDate(ev.event_date)}</span>
+                    <span className="mx-1.5 text-ash">·</span>
+                    <span className="text-white">{ev.venue_name}</span>
+                    <span className="text-gray-500">
+                      {ev.city ? `, ${ev.city}` : ''}
+                      {ev.state ? `, ${ev.state}` : ''}
                     </span>
-                    <span className="text-xs text-gray-500">
-                      {ev.upload_count} uploads
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-    </details>
+                  </span>
+                  <span className="ml-4 shrink-0 font-mono text-[10px] text-gray-600">
+                    {ev.upload_count}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
   );
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-function sectionLabel(tag: SectionTag): string {
-  return tag === 'floor'
-    ? 'Floor/Pit'
-    : tag === 'section_100'
-      ? 'Section 100s'
-      : tag === 'section_200'
-        ? 'Section 200s'
-        : tag === 'upper'
-          ? 'Upper deck'
-          : tag === 'stage_left'
-            ? 'Stage left'
-            : 'Stage right';
-}
 
 function filterHighlights(
   media: MediaRow[],

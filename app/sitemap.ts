@@ -20,6 +20,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const entries: MetadataRoute.Sitemap = [
     { url: `${base}/`, changeFrequency: 'daily', priority: 1 },
     { url: `${base}/search`, changeFrequency: 'weekly', priority: 0.3 },
+    { url: `${base}/about`, changeFrequency: 'monthly', priority: 0.4 },
+    { url: `${base}/contact`, changeFrequency: 'monthly', priority: 0.3 },
+    { url: `${base}/privacy`, changeFrequency: 'monthly', priority: 0.2 },
+    { url: `${base}/terms`, changeFrequency: 'monthly', priority: 0.2 },
+    { url: `${base}/dmca`, changeFrequency: 'monthly', priority: 0.2 },
   ];
 
   for (const e of entitiesRes.data ?? []) {

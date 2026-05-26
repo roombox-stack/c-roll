@@ -12,6 +12,9 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { SECTION_LABELS, type SectionTag } from '@/lib/types';
 import { VideoPlayer } from '@/components/video-player';
 import { LikeButton } from '@/components/like-button';
+import { ViewPing } from '@/components/view-ping';
+import { Footer } from '@/components/footer';
+import { BLUR_DATA_URL } from '@/lib/blur-placeholder';
 import { formatEventDate, formatCount } from '@/components/format';
 
 export const dynamic = 'force-dynamic';
@@ -67,12 +70,22 @@ export async function generateMetadata({
   const title = m.song_tag
     ? `${m.song_tag} — ${entity?.name ?? ''}`
     : `${entity?.name ?? 'Showside'} — ${ev?.venue_name ?? ''}`;
+  const description = m.caption ?? `Fan-shot ${m.file_type} from ${entity?.name ?? 'Showside'}.`;
   return {
     title,
-    description: m.caption ?? `Fan-shot ${m.file_type} from ${entity?.name ?? 'Showside'}.`,
+    description,
+    alternates: { canonical: `/watch/${m.id}` },
     openGraph: {
       title,
-      images: m.thumbnail_url ? [{ url: m.thumbnail_url }] : undefined,
+      description,
+      type: m.file_type === 'video' ? 'video.other' : 'website',
+      images: m.thumbnail_url ? [{ url: m.thumbnail_url, width: 1280, height: 720 }] : undefined,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: m.thumbnail_url ? [m.thumbnail_url] : undefined,
     },
   };
 }
@@ -86,11 +99,8 @@ export default async function WatchPage({ params }: { params: { mediaId: string 
 
   const supabase = createAdminClient();
 
-  // View increment (no dedup for V1 — see note at top of file).
-  await supabase
-    .from('media')
-    .update({ view_count: media.view_count + 1 })
-    .eq('id', media.id);
+  // View count is bumped client-side via <ViewPing /> → POST /api/view.
+  // Deduped per (media, session_token) in the media_views table.
 
   // Prev / next within the same event, ordered by created_at desc.
   const { data: siblings } = await supabase
@@ -107,7 +117,9 @@ export default async function WatchPage({ params }: { params: { mediaId: string 
   const backHref = entity && ev ? `/${entity.slug}/${ev.slug}` : '/';
 
   return (
-    <div className="flex min-h-screen flex-col bg-ink text-white md:flex-row">
+    <div className="flex min-h-screen flex-col bg-ink text-white">
+      <ViewPing mediaId={media.id} />
+      <div className="flex flex-1 flex-col md:flex-row">
       {/* Media stage */}
       <div className="relative flex flex-1 items-center justify-center bg-black p-2 md:p-6">
         {media.file_type === 'video' && media.mux_playback_id ? (
@@ -126,6 +138,8 @@ export default async function WatchPage({ params }: { params: { mediaId: string 
             height={1280}
             unoptimized
             priority
+            placeholder="blur"
+            blurDataURL={BLUR_DATA_URL}
             className="max-h-[85vh] w-auto rounded object-contain"
           />
         ) : (
@@ -206,7 +220,7 @@ export default async function WatchPage({ params }: { params: { mediaId: string 
           <LikeButton mediaId={media.id} initialLikeCount={media.like_count} />
           {media.file_type === 'video' ? (
             <span className="text-sm text-gray-400">
-              {formatCount(media.view_count + 1)} views
+              {formatCount(media.view_count)} views
             </span>
           ) : null}
         </div>
@@ -222,6 +236,8 @@ export default async function WatchPage({ params }: { params: { mediaId: string 
           {new Date(media.created_at).toLocaleDateString()}
         </p>
       </aside>
+      </div>
+      <Footer />
     </div>
   );
 }

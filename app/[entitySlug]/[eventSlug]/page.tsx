@@ -2,12 +2,12 @@
 //
 // Three tabs (URL-driven, not client state):
 //   ?tab=watch (default)  — featured player + setlist song nav + highlights grid
-//   ?tab=browse           — photo/video + section filters, chronological grid
+//   ?tab=browse           — photo/video + section filters, infinite-scroll grid
 //   ?tab=upload           — link out to /upload/[slug] (full inline flow in Phase 5)
 //
-// All data is fetched once at the top (up to 100 active media) and views are
-// derived in memory. Cheap enough for V1 and lets us compute setlist clip
-// counts + facet filters without round-tripping the DB.
+// Watch tab: fetches up to 100 active media for in-memory setlist counts.
+// Browse tab: fetches first page (24) from DB via the same query used by the
+//   pagination API, then passes initialItems + nextCursor to <BrowseGrid />.
 
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -17,7 +17,9 @@ import { getCurrentUser } from '@/lib/auth';
 import { Nav } from '@/components/nav';
 import { VideoPlayer } from '@/components/video-player';
 import { MediaCard, type MediaCardData } from '@/components/media-card';
+import { BrowseGrid } from '@/components/browse-grid';
 import { UploadButton } from '@/components/upload-button';
+import { Footer } from '@/components/footer';
 import { AttendanceButton } from '@/components/attendance-button';
 import { SECTION_LABELS, SECTION_ORDER, type SectionTag } from '@/lib/types';
 import { formatEventDate, formatCount } from '@/components/format';
@@ -80,6 +82,7 @@ export async function generateMetadata({
     description,
     alternates: canonical ? { canonical } : undefined,
     openGraph: { title, description, type: 'website' },
+    twitter: { card: 'summary_large_image', title, description },
   };
 }
 
@@ -100,7 +103,8 @@ export default async function EventPage({
 
   const supabase = createAdminClient();
 
-  // Pull all active media for the event (capped) — we'll filter and sort in memory.
+  // Pull media for Watch tab setlist counts + contributor count.
+  // (Browse tab fetches its own paginated first page below.)
   const { data: rawMedia } = await supabase
     .from('media')
     .select(
@@ -117,6 +121,43 @@ export default async function EventPage({
   for (const m of allMedia) {
     if (m.uploader_id) contribKeys.add(`u:${m.uploader_id}`);
     else if (m.upload_session) contribKeys.add(`s:${m.upload_session}`);
+  }
+
+  // Browse tab: first page (24 items) with DB-side filter for the client component.
+  const BROWSE_PAGE = 24;
+  let browseInitialItems: MediaCardData[] = [];
+  let browseNextCursor: string | null = null;
+
+  if (tab === 'browse') {
+    let browseQ = supabase
+      .from('media')
+      .select(
+        'id, file_type, storage_url, thumbnail_url, mux_playback_id, duration_sec, song_tag, section_tag, caption, view_count, like_count, is_full_song, created_at',
+      )
+      .eq('event_id', event.id)
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
+      .limit(BROWSE_PAGE + 1);
+
+    const browseFilter = searchParams.filter ?? '';
+    const browseSection = searchParams.section ?? '';
+    if (browseFilter === 'photos') browseQ = browseQ.eq('file_type', 'photo');
+    if (browseFilter === 'videos') browseQ = browseQ.eq('file_type', 'video');
+    if (browseSection && (SECTION_ORDER as string[]).includes(browseSection)) {
+      browseQ = browseQ.eq('section_tag', browseSection);
+    }
+
+    const { data: browseRaw } = await browseQ;
+    const browseRows = (browseRaw ?? []) as unknown as Array<MediaCardData & { created_at: string }>;
+    const hasMore = browseRows.length > BROWSE_PAGE;
+    browseInitialItems = hasMore ? browseRows.slice(0, BROWSE_PAGE) : browseRows;
+    const last = browseInitialItems[browseInitialItems.length - 1] as (MediaCardData & { created_at: string }) | undefined;
+    if (hasMore && last) {
+      browseNextCursor = Buffer.from(
+        JSON.stringify({ created_at: last.created_at, id: last.id }),
+      ).toString('base64url');
+    }
   }
 
   // Attendance: total count + whether the current user (if any) attended.
@@ -203,12 +244,19 @@ export default async function EventPage({
           />
         ) : null}
         {tab === 'browse' ? (
-          <BrowseTab
+          <BrowseTabShell
             baseUrl={baseUrl}
-            allMedia={allMedia}
             filter={searchParams.filter}
             section={searchParams.section as SectionTag | undefined}
-          />
+          >
+            <BrowseGrid
+              initialItems={browseInitialItems}
+              initialCursor={browseNextCursor}
+              eventSlug={event.slug}
+              filter={searchParams.filter}
+              section={searchParams.section}
+            />
+          </BrowseTabShell>
         ) : null}
       </main>
 
@@ -247,6 +295,7 @@ export default async function EventPage({
           }),
         }}
       />
+      <Footer />
     </div>
   );
 }
@@ -420,18 +469,18 @@ function WatchTab({
   );
 }
 
-// ── Browse tab ───────────────────────────────────────────────────────────────
+// ── Browse tab shell (filter pills only — grid is client-rendered) ───────────
 
-function BrowseTab({
+function BrowseTabShell({
   baseUrl,
-  allMedia,
   filter,
   section,
+  children,
 }: {
   baseUrl: string;
-  allMedia: EventMedia[];
   filter?: string;
   section?: SectionTag;
+  children: React.ReactNode;
 }) {
   const params = (overrides: { filter?: string | null; section?: string | null }) => {
     const f = overrides.filter !== undefined ? overrides.filter : filter;
@@ -442,33 +491,16 @@ function BrowseTab({
     return `${baseUrl}?${sp.toString()}`;
   };
 
-  const grid = allMedia
-    .filter((m) => {
-      if (filter === 'photos' && m.file_type !== 'photo') return false;
-      if (filter === 'videos' && m.file_type !== 'video') return false;
-      if (section && m.section_tag !== section) return false;
-      return true;
-    })
-    .sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at));
-
   return (
     <div className="space-y-5">
       <div className="space-y-3">
         <div className="flex flex-wrap gap-2">
-          <Pill href={params({ filter: null })} active={!filter}>
-            All
-          </Pill>
-          <Pill href={params({ filter: 'photos' })} active={filter === 'photos'}>
-            Photos
-          </Pill>
-          <Pill href={params({ filter: 'videos' })} active={filter === 'videos'}>
-            Videos
-          </Pill>
+          <Pill href={params({ filter: null })} active={!filter}>All</Pill>
+          <Pill href={params({ filter: 'photos' })} active={filter === 'photos'}>Photos</Pill>
+          <Pill href={params({ filter: 'videos' })} active={filter === 'videos'}>Videos</Pill>
         </div>
         <div className="flex flex-wrap gap-2 border-t border-ash pt-3">
-          <Pill href={params({ section: null })} active={!section}>
-            All sections
-          </Pill>
+          <Pill href={params({ section: null })} active={!section}>All sections</Pill>
           {SECTION_ORDER.map((s) => (
             <Pill key={s} href={params({ section: s })} active={section === s}>
               {SECTION_LABELS[s]}
@@ -476,18 +508,7 @@ function BrowseTab({
           ))}
         </div>
       </div>
-
-      {grid.length === 0 ? (
-        <p className="rounded-lg border border-ash bg-smoke p-6 text-sm text-gray-400">
-          No media matching these filters.
-        </p>
-      ) : (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-          {grid.map((m) => (
-            <MediaCard key={m.id} media={m} />
-          ))}
-        </div>
-      )}
+      {children}
     </div>
   );
 }
