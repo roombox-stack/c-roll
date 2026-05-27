@@ -287,7 +287,7 @@ export default async function HomePage() {
             alt=""
             fill
             sizes="100vw"
-            className="object-cover object-right opacity-90"
+            className="object-cover object-right opacity-100"
             unoptimized
             priority
           />
