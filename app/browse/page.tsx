@@ -8,6 +8,7 @@ import Image from 'next/image';
 import { Nav } from '@/components/nav';
 import { Footer } from '@/components/footer';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { getCurrentUser } from '@/lib/auth';
 import { formatCount } from '@/components/format';
 import type { EntityType } from '@/lib/types';
 import { BrowseClient, type BrowseEntity, type BrowseEvent } from './browse-client';
@@ -76,6 +77,22 @@ export default async function BrowsePage() {
   const eventsRaw = (eventsRes.data ?? []) as EventFromDB[];
   const mediaRaw = (mediaRes.data ?? []) as MediaFromDB[];
   const totalClips = mediaCountRes.count ?? 0;
+
+  // Which entities does the current user already follow?
+  const currentUser = await getCurrentUser();
+  const followingSlugs = new Set<string>();
+  if (currentUser) {
+    const { data: followsData } = await supabase
+      .from('follows')
+      .select('entity_id')
+      .eq('user_id', currentUser.id);
+    const followedIds = new Set(
+      (followsData ?? []).map((r) => (r as { entity_id: string }).entity_id),
+    );
+    for (const e of entitiesRaw) {
+      if (followedIds.has(e.id)) followingSlugs.add(e.slug);
+    }
+  }
 
   // ── Aggregate per entity ──────────────────────────────────────────────────
   const entityAgg = new Map<string, { showCount: number; uploadCount: number; lastDate: string }>();
@@ -167,7 +184,12 @@ export default async function BrowsePage() {
         </div>
       </section>
 
-      <BrowseClient entities={entities} events={events} />
+      <BrowseClient
+        entities={entities}
+        events={events}
+        isAuthed={!!currentUser}
+        followingSlugs={Array.from(followingSlugs)}
+      />
 
       <Footer />
     </div>

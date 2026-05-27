@@ -12,6 +12,7 @@ import Image from 'next/image';
 import { BLUR_DATA_URL } from '@/lib/blur-placeholder';
 import { formatCount, formatEventDate } from '@/components/format';
 import { ENTITY_TYPE_LABELS, type EntityType } from '@/lib/types';
+import { FollowButton } from '@/components/follow-button';
 
 export interface BrowseEntity {
   id: string;
@@ -58,10 +59,15 @@ const SORT_OPTIONS: Array<{ value: SortKey; label: string }> = [
 export function BrowseClient({
   entities,
   events,
+  isAuthed,
+  followingSlugs,
 }: {
   entities: BrowseEntity[];
   events: BrowseEvent[];
+  isAuthed: boolean;
+  followingSlugs: string[];
 }) {
+  const followingSet = useMemo(() => new Set(followingSlugs), [followingSlugs]);
   const [view, setView] = useState<ViewMode>('entities');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
   const [sortKey, setSortKey] = useState<SortKey>('clips');
@@ -187,7 +193,12 @@ export function BrowseClient({
               style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))' }}
             >
               {filteredEntities.map((e) => (
-                <EntityGridCard key={e.id} entity={e} />
+                <EntityGridCard
+                  key={e.id}
+                  entity={e}
+                  isAuthed={isAuthed}
+                  initialFollowing={followingSet.has(e.slug)}
+                />
               ))}
             </div>
           )
@@ -207,7 +218,15 @@ export function BrowseClient({
 
 // ── Entity card ─────────────────────────────────────────────────────────────
 
-function EntityGridCard({ entity }: { entity: BrowseEntity }) {
+function EntityGridCard({
+  entity,
+  isAuthed,
+  initialFollowing,
+}: {
+  entity: BrowseEntity;
+  isAuthed: boolean;
+  initialFollowing: boolean;
+}) {
   const typeLabel = ENTITY_TYPE_LABELS[entity.type] ?? entity.type;
   return (
     <Link
@@ -242,14 +261,15 @@ function EntityGridCard({ entity }: { entity: BrowseEntity }) {
             {formatCount(entity.upload_count)} clips
           </p>
         </div>
-        <span
-          // Render the Follow control but don't wire it up in V1.
-          // Stopping propagation keeps clicks from triggering the card link.
-          onClick={(e) => e.preventDefault()}
-          className="shrink-0 cursor-default rounded-full border border-white/15 px-2.5 py-0.5 text-[10px] font-semibold text-gray-400 transition hover:border-white/30 hover:text-white"
-        >
-          Follow
-        </span>
+        <FollowButton
+          entitySlug={entity.slug}
+          initialFollowing={initialFollowing}
+          initialFollowerCount={entity.follower_count}
+          isAuthed={isAuthed}
+          variant="ghost"
+          showCount={false}
+          className="shrink-0 !rounded-full !px-2.5 !py-0.5 !text-[10px] !font-semibold"
+        />
       </div>
     </Link>
   );

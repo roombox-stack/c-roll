@@ -8,6 +8,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Nav } from '@/components/nav';
 import { Footer } from '@/components/footer';
+import { FollowButton } from '@/components/follow-button';
+import { getCurrentUser } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { BLUR_DATA_URL } from '@/lib/blur-placeholder';
 import { formatCount, formatEventDate, formatDuration } from '@/components/format';
@@ -194,6 +196,23 @@ export default async function HomePage() {
   const trending = (trendingRes.data ?? []) as unknown as TrendingMedia[];
   const calendarEvents = (calendarRes.data ?? []) as unknown as CalendarEvent[];
   const topEntities = (topEntitiesRes.data ?? []) as HomeEntity[];
+
+  // Which of the top-entity card slugs does the current user already follow?
+  const currentUser = await getCurrentUser();
+  const followingSlugs = new Set<string>();
+  if (currentUser && topEntities.length > 0) {
+    const { data: followRows } = await supabase
+      .from('follows')
+      .select('entity_id')
+      .eq('user_id', currentUser.id)
+      .in('entity_id', topEntities.map((e) => e.id));
+    const followedIds = new Set(
+      (followRows ?? []).map((r) => (r as { entity_id: string }).entity_id),
+    );
+    for (const e of topEntities) {
+      if (followedIds.has(e.id)) followingSlugs.add(e.slug);
+    }
+  }
   const featuredEvent = (featuredEventRes.data ?? null) as unknown as FeaturedEvent | null;
 
   // ── Calendar bucketing ────────────────────────────────────────────────────
@@ -456,7 +475,12 @@ export default async function HomePage() {
 
             <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
               {topEntities.map((e) => (
-                <FollowEntityCard key={e.id} entity={e} />
+                <FollowEntityCard
+                  key={e.id}
+                  entity={e}
+                  isAuthed={!!currentUser}
+                  initialFollowing={followingSlugs.has(e.slug)}
+                />
               ))}
             </div>
           </section>
@@ -631,7 +655,15 @@ function CalendarBucket({
 
 // ── Follow entity card ───────────────────────────────────────────────────────
 
-function FollowEntityCard({ entity }: { entity: HomeEntity }) {
+function FollowEntityCard({
+  entity,
+  isAuthed,
+  initialFollowing,
+}: {
+  entity: HomeEntity;
+  isAuthed: boolean;
+  initialFollowing: boolean;
+}) {
   const typeLabel = ENTITY_TYPE_LABELS[entity.type] ?? entity.type;
   return (
     <Link
@@ -665,9 +697,15 @@ function FollowEntityCard({ entity }: { entity: HomeEntity }) {
             {formatCount(entity.follower_count)} followers
           </p>
         </div>
-        <span className="shrink-0 rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[10px] font-semibold text-white backdrop-blur">
-          Follow
-        </span>
+        <FollowButton
+          entitySlug={entity.slug}
+          initialFollowing={initialFollowing}
+          initialFollowerCount={entity.follower_count}
+          isAuthed={isAuthed}
+          variant="ghost"
+          showCount={false}
+          className="shrink-0 !rounded-full !px-2.5 !py-1 !text-[10px] !font-semibold"
+        />
       </div>
     </Link>
   );

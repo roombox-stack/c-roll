@@ -22,6 +22,8 @@ import { Footer } from '@/components/footer';
 import { BLUR_DATA_URL } from '@/lib/blur-placeholder';
 import { type EntityType, type SectionTag } from '@/lib/types';
 import { fetchEventHeroThumbs } from '@/lib/event-thumbs';
+import { FollowButton } from '@/components/follow-button';
+import { getCurrentUser } from '@/lib/auth';
 import { formatCount, formatEventDate } from '@/components/format';
 
 export const dynamic = 'force-dynamic';
@@ -200,6 +202,19 @@ export default async function EntityPage({
   // active video on each event (if any).
   const heroThumbs = await fetchEventHeroThumbs(allEvents.map((e) => e.id));
 
+  // Current user + whether they follow this entity (powers the Follow button).
+  const currentUser = await getCurrentUser();
+  let initiallyFollowing = false;
+  if (currentUser) {
+    const { data } = await supabase
+      .from('follows')
+      .select('id')
+      .eq('user_id', currentUser.id)
+      .eq('entity_id', entity.id)
+      .maybeSingle();
+    initiallyFollowing = !!data;
+  }
+
   // Events — "Recent shows" = past shows only (most-recently-ended first).
   // allEvents is already sorted by event_date desc, so filtering preserves order.
   const todayISO = new Date().toISOString().slice(0, 10);
@@ -314,15 +329,14 @@ export default async function EntityPage({
                     Watch latest show
                   </Link>
                 ) : null}
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-2 rounded-md border border-white/20 bg-white/5 px-5 py-2.5 text-sm font-medium text-white backdrop-blur transition hover:bg-white/10"
-                >
-                  Follow
-                  {entity.follower_count > 0 ? (
-                    <span className="text-gray-400">· {formatCount(entity.follower_count)}</span>
-                  ) : null}
-                </button>
+                <FollowButton
+                  entitySlug={entity.slug}
+                  initialFollowing={initiallyFollowing}
+                  initialFollowerCount={entity.follower_count}
+                  isAuthed={!!currentUser}
+                  variant="hero"
+                  className="px-5 py-2.5"
+                />
               </div>
             </div>
 
