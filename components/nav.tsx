@@ -99,7 +99,7 @@ export async function Nav() {
           {/* Upload — red fill */}
           <Link
             href="/upload"
-            className="inline-flex items-center gap-1.5 rounded-md bg-croll px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-croll/90"
+            className="inline-flex items-center gap-1.5 rounded-md bg-croll px-4 py-1.5 text-sm font-semibold text-ink transition hover:brightness-105"
           >
             <svg
               width="13"
