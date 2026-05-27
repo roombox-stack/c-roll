@@ -20,6 +20,47 @@ export default function AboutPage() {
 
         <div className="mt-10 space-y-8 text-gray-300 leading-relaxed">
           <section>
+            <h2 className="mb-3 text-xl font-semibold text-white">
+              What does &lsquo;c-roll&rsquo; mean?
+            </h2>
+            <p>The name has two layers working together.</p>
+            <p className="mt-3">
+              The <span className="text-white">C</span> stands for{' '}
+              <span className="text-white">Crowd</span>. Not the artist, not the production,
+              not the official broadcast — the crowd. The tens of thousands of people in the
+              seats and on the floor, phones raised, capturing the same moment from a thousand
+              different angles. That&rsquo;s the source material. That&rsquo;s what makes this
+              different from everything else.
+            </p>
+            <p className="mt-3">
+              <span className="text-white">Roll</span> is a filmmaking term. When a director
+              calls &ldquo;roll,&rdquo; they&rsquo;re calling for the cameras to start. B-roll
+              is the supplemental footage that gives a story texture and context — the
+              cutaways, the atmosphere, the details the A-camera misses. It&rsquo;s a real
+              category of film with a real name.
+            </p>
+            <p className="mt-3">C-roll doesn&rsquo;t exist yet. We&rsquo;re proposing it should.</p>
+            <p className="mt-3">
+              If <span className="text-white">A-roll</span> is the official broadcast — the
+              polished, produced, licensed feed — and <span className="text-white">B-roll</span>{' '}
+              is the behind-the-scenes and supplemental footage, then{' '}
+              <span className="text-white">C-roll</span> is the crowd footage. The shaky,
+              close, unfiltered, from inside it footage that no production crew can capture
+              because they&rsquo;re not standing in the pit, not sitting in row 12, not
+              pressed against the barrier when the lights drop.
+            </p>
+            <p className="mt-3">
+              C-roll is what 60,000 people shoot simultaneously and post to their stories and
+              then it disappears. It&rsquo;s the most abundant, least organized, most
+              emotionally authentic category of footage in the world, and it has never had a
+              name.
+            </p>
+            <p className="mt-3">
+              We&rsquo;re giving it one. And building the place where it lives.
+            </p>
+          </section>
+
+          <section>
             <h2 className="mb-3 text-xl font-semibold text-white">What we are</h2>
             <p>
               c-roll is a fan media platform for live events. If you went to a show — a
