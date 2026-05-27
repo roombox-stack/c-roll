@@ -8,6 +8,14 @@ import { SECTION_LABELS, type SectionTag } from '@/lib/types';
 import { formatCount } from './format';
 import type { MediaCardData } from './media-card';
 
+/** Returns null for blank or generic "Untitled*" placeholders so they don't render. */
+function cleanLabel(s: string | null | undefined): string | null {
+  if (!s) return null;
+  const t = s.trim().toLowerCase();
+  if (!t || t.startsWith('untitled')) return null;
+  return s.trim();
+}
+
 function fmtDur(sec: number | null): string {
   if (!sec || sec <= 0) return '';
   const m = Math.floor(sec / 60);
@@ -87,16 +95,16 @@ export function MosaicCard({ media }: { media: MediaCardData }) {
 
         {/* Bottom metadata */}
         <div className="absolute inset-x-0 bottom-0 space-y-0.5 px-2.5 pb-2.5 pt-6">
-          {media.song_tag && (
+          {cleanLabel(media.song_tag) && (
             <div className="flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" />
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-croll" />
               <span className="truncate text-[11px] font-semibold text-white">
-                {media.song_tag}
+                {cleanLabel(media.song_tag)}
               </span>
             </div>
           )}
-          {media.caption && (
-            <p className="truncate text-[10px] leading-snug text-gray-300">{media.caption}</p>
+          {cleanLabel(media.caption) && (
+            <p className="truncate text-[10px] leading-snug text-gray-300">{cleanLabel(media.caption)}</p>
           )}
           <div className="flex items-center justify-between text-[10px] text-gray-500">
             <span>{handle}</span>

@@ -4,6 +4,13 @@
 // overlay on a darkened gradient.
 
 import Link from 'next/link';
+
+function cleanLabel(s: string | null | undefined): string | null {
+  if (!s) return null;
+  const t = s.trim().toLowerCase();
+  if (!t || t.startsWith('untitled')) return null;
+  return s.trim();
+}
 import Image from 'next/image';
 import { BLUR_DATA_URL } from '@/lib/blur-placeholder';
 import { CardLikeButton } from './card-like-button';
@@ -115,8 +122,8 @@ export function MediaCard({
 
           {/* bottom text labels */}
           <div className="absolute inset-x-0 bottom-0 p-2.5 text-xs text-white">
-            {(media.song_tag || media.caption) && (
-              <div className="truncate text-sm font-medium">{media.song_tag ?? media.caption}</div>
+            {(cleanLabel(media.song_tag) || cleanLabel(media.caption)) && (
+              <div className="truncate text-sm font-medium">{cleanLabel(media.song_tag) ?? cleanLabel(media.caption)}</div>
             )}
             {showEventLabel && media.event && (
               <div className="truncate text-[11px] text-gray-300">

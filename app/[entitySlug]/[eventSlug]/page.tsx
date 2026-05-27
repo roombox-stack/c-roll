@@ -91,6 +91,13 @@ export async function generateMetadata({
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+function cleanLabel(s: string | null | undefined): string | null {
+  if (!s) return null;
+  const t = s.trim().toLowerCase();
+  if (!t || t.startsWith('untitled')) return null;
+  return s.trim();
+}
+
 function fmtDuration(sec: number | null): string {
   if (!sec) return '';
   const m = Math.floor(sec / 60);
@@ -248,7 +255,7 @@ export default async function EventPage({
           </div>
 
           {/* Eyebrow — tour name if set, else entity name */}
-          <p className="mt-4 font-mono text-[10px] font-semibold uppercase tracking-widest text-red-500">
+          <p className="mt-4 font-mono text-[10px] font-semibold uppercase tracking-widest text-croll">
             // {(event.tour_name ?? entity.name).toUpperCase()}
           </p>
 
@@ -538,9 +545,9 @@ function WatchTab({
                 )}
               </div>
               {/* Caption */}
-              {featured.caption && (
+              {cleanLabel(featured.caption) && (
                 <p className="text-lg font-semibold leading-snug md:text-xl">
-                  &ldquo;{featured.caption}&rdquo;
+                  &ldquo;{cleanLabel(featured.caption)}&rdquo;
                 </p>
               )}
               {/* Uploader + meta */}
@@ -590,7 +597,7 @@ function WatchTab({
       {setlist.length > 0 && (
         <section>
           {/* Section eyebrow */}
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-widest text-red-500">
+          <p className="font-mono text-[10px] font-semibold uppercase tracking-widest text-croll">
             // STEP THROUGH THE SHOW
           </p>
           <h2 className="mt-1 font-heading text-2xl font-bold md:text-3xl">
@@ -762,8 +769,8 @@ function UpNextCard({ media }: { media: EventMedia }) {
       </div>
       {/* Meta */}
       <div className="px-2.5 py-2">
-        {media.song_tag && (
-          <p className="truncate text-[11px] font-medium text-white">{media.song_tag}</p>
+        {cleanLabel(media.song_tag) && (
+          <p className="truncate text-[11px] font-medium text-white">{cleanLabel(media.song_tag)}</p>
         )}
         <p className="mt-0.5 flex items-center justify-between text-[10px] text-gray-500">
           <span>
