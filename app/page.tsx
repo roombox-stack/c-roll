@@ -272,12 +272,7 @@ export default async function HomePage() {
     featuredContribCount = contribs.size;
   }
 
-  // Pick a hero background — use the featured event's hero clip thumbnail if we have one,
-  // else fall back to the first trending clip's thumbnail.
-  const heroBgImage =
-    featuredHeroMedia?.thumbnail_url ??
-    trending.find((m) => m.thumbnail_url)?.thumbnail_url ??
-    null;
+  const heroBgImage = '/hero-home.jpg';
 
   return (
     <div className="min-h-screen bg-ink text-white">
