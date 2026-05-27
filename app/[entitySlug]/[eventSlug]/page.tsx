@@ -243,7 +243,7 @@ export default async function EventPage({
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <section className="border-b border-ash bg-smoke/40">
-        <div className="mx-auto max-w-7xl px-4 pt-6 pb-0">
+        <div className="mx-auto max-w-7xl px-4 pt-5 pb-0">
 
           {/* Breadcrumb */}
           <div className="flex items-center gap-1.5 text-sm text-gray-500">
@@ -254,55 +254,60 @@ export default async function EventPage({
             <span>{event.city}, {shortDate}</span>
           </div>
 
-          {/* Eyebrow — tour name if set, else entity name */}
-          <p className="mt-4 font-mono text-[10px] font-semibold uppercase tracking-widest text-croll">
-            // {(event.tour_name ?? entity.name).toUpperCase()}
-          </p>
+          {/* Title block (left) + stats (right) */}
+          <div className="mt-3 grid items-start gap-x-8 gap-y-5 lg:grid-cols-[1fr_auto]">
+            <div className="min-w-0">
+              {/* Eyebrow — tour name if set, else entity name */}
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-widest text-croll">
+                // {(event.tour_name ?? entity.name).toUpperCase()}
+              </p>
 
-          {/* H1 */}
-          <h1 className="mt-1 font-display text-4xl font-black leading-tight md:text-5xl lg:text-6xl">
-            {event.venue_name}
-            <span className="text-white/30"> · </span>
-            {event.city}
-          </h1>
+              {/* H1 */}
+              <h1 className="mt-1 font-display text-2xl font-black leading-tight md:text-3xl lg:text-4xl">
+                {event.venue_name}
+                <span className="text-white/30"> · </span>
+                {event.city}
+              </h1>
 
-          {/* Meta row */}
-          <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-gray-400">
-            <span className="flex items-center gap-1.5">
-              <svg className="h-3.5 w-3.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" strokeWidth="2" />
-                <line x1="16" y1="2" x2="16" y2="6" strokeWidth="2" />
-                <line x1="8" y1="2" x2="8" y2="6" strokeWidth="2" />
-                <line x1="3" y1="10" x2="21" y2="10" strokeWidth="2" />
-              </svg>
-              {formatEventDate(event.event_date)}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <svg className="h-3.5 w-3.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" strokeWidth="2" />
-                <circle cx="12" cy="10" r="3" strokeWidth="2" />
-              </svg>
-              {event.city}{event.state ? `, ${event.state}` : ''}
-            </span>
-          </div>
+              {/* Meta row */}
+              <div className="mt-2.5 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-gray-400">
+                <span className="flex items-center gap-1.5">
+                  <svg className="h-3.5 w-3.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" strokeWidth="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" strokeWidth="2" />
+                    <line x1="8" y1="2" x2="8" y2="6" strokeWidth="2" />
+                    <line x1="3" y1="10" x2="21" y2="10" strokeWidth="2" />
+                  </svg>
+                  {formatEventDate(event.event_date)}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <svg className="h-3.5 w-3.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" strokeWidth="2" />
+                    <circle cx="12" cy="10" r="3" strokeWidth="2" />
+                  </svg>
+                  {event.city}{event.state ? `, ${event.state}` : ''}
+                </span>
+              </div>
+            </div>
 
-          {/* Stats row */}
-          <div className="mt-6 flex items-stretch divide-x divide-white/10">
-            <EventStat label="Clips" value={event.upload_count} />
-            <EventStat label="Contributors" value={contribKeys.size} />
-            <EventStat label="Attendance" value={attendeeCount ?? 0} attendance>
-              <AttendanceButton
-                eventId={event.id}
-                eventUrl={baseUrl}
-                initiallyAttending={initiallyAttending}
-                initialCount={attendeeCount ?? 0}
-                isAuthed={!!currentUser}
-              />
-            </EventStat>
+            {/* Stats row — sits top-right on lg+, wraps below title on mobile */}
+            <div className="flex items-stretch divide-x divide-white/10 lg:justify-end">
+              <EventStat label="Clips" value={event.upload_count} />
+              <EventStat label="Contributors" value={contribKeys.size} />
+              <EventStat label="Attendance" value={attendeeCount ?? 0} attendance>
+                <AttendanceButton
+                  eventId={event.id}
+                  eventUrl={baseUrl}
+                  initiallyAttending={initiallyAttending}
+                  initialCount={attendeeCount ?? 0}
+                  isAuthed={!!currentUser}
+                />
+              </EventStat>
+            </div>
           </div>
 
           {/* Tab bar */}
-          <div className="mt-8 flex gap-0">
+          <div className="mt-6 flex gap-0">
             <TabLink href={baseUrl} active={tab === 'watch'} sub="curated experience">
               Watch
             </TabLink>
