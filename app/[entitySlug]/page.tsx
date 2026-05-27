@@ -21,6 +21,7 @@ import { HighlightsGrid } from '@/components/highlights-grid';
 import { Footer } from '@/components/footer';
 import { BLUR_DATA_URL } from '@/lib/blur-placeholder';
 import { type EntityType, type SectionTag } from '@/lib/types';
+import { fetchEventHeroThumbs } from '@/lib/event-thumbs';
 import { formatCount, formatEventDate } from '@/components/format';
 
 export const dynamic = 'force-dynamic';
@@ -194,6 +195,10 @@ export default async function EntityPage({
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5);
   const maxSongCount = topSongs[0]?.[1] ?? 1;
+
+  // Hero thumbnails for the show cards — Mux thumb of the most-viewed
+  // active video on each event (if any).
+  const heroThumbs = await fetchEventHeroThumbs(allEvents.map((e) => e.id));
 
   // Events — "Recent shows" = past shows only (most-recently-ended first).
   // allEvents is already sorted by event_date desc, so filtering preserves order.
@@ -431,6 +436,7 @@ export default async function EntityPage({
                   event={ev}
                   isLatest={i === 0}
                   href={`/${entity.slug}/${ev.slug}`}
+                  heroThumbUrl={heroThumbs.get(ev.id) ?? null}
                 />
               ))}
             </div>
@@ -665,10 +671,12 @@ function EventCard({
   event,
   isLatest,
   href,
+  heroThumbUrl,
 }: {
   event: EventRow;
   isLatest: boolean;
   href: string;
+  heroThumbUrl?: string | null;
 }) {
   const gradient = EVENT_GRADIENTS[hashIndex(event.id, EVENT_GRADIENTS.length)];
   return (
@@ -676,7 +684,17 @@ function EventCard({
       href={href}
       className={`group relative block aspect-[5/4] overflow-hidden rounded-lg bg-gradient-to-br ${gradient} transition hover:brightness-110`}
     >
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/10" />
+      {heroThumbUrl ? (
+        <Image
+          src={heroThumbUrl}
+          alt=""
+          fill
+          sizes="(min-width: 1024px) 25vw, 50vw"
+          className="object-cover transition group-hover:scale-105"
+          unoptimized
+        />
+      ) : null}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-black/20" />
 
       {/* LAST SHOW badge */}
       {isLatest ? (

@@ -16,6 +16,7 @@ import { Nav } from '@/components/nav';
 import { Footer } from '@/components/footer';
 import { MediaCard, type MediaCardData } from '@/components/media-card';
 import { EventCard } from '@/components/event-card';
+import { fetchEventHeroThumbs } from '@/lib/event-thumbs';
 import { SignOutButton } from '@/components/sign-out-button';
 import { formatCount, formatEventDate } from '@/components/format';
 
@@ -116,6 +117,9 @@ export default async function ProfilePage({ params }: { params: { username: stri
   const attended = attendedRaw
     .map((a) => a.event)
     .filter((e): e is NonNullable<typeof e> => e != null);
+
+  // Mux thumbnail for the most-viewed video on each attended show.
+  const attendedHeroThumbs = await fetchEventHeroThumbs(attended.map((e) => e.id));
 
   // Distinct artist count via entity_id from attended events.
   const distinctArtists = new Set<string>();
@@ -224,6 +228,7 @@ export default async function ProfilePage({ params }: { params: { username: stri
                       event_date: ev.event_date,
                       upload_count: ev.upload_count,
                       entity: ent,
+                      hero_thumb_url: attendedHeroThumbs.get(ev.id) ?? null,
                     }}
                   />
                 );

@@ -17,6 +17,12 @@ export type EventCardData = {
   upload_count: number;
   entity: { slug: string; name: string };
   recent_media?: Array<{ id: string; thumbnail_url: string | null }>;
+  /**
+   * Mux thumbnail URL for the most-viewed active video on this event,
+   * supplied by the page via fetchEventHeroThumbs(). Takes precedence over
+   * the 3-up recent_media strip when present.
+   */
+  hero_thumb_url?: string | null;
 };
 
 export function EventCard({
@@ -33,7 +39,18 @@ export function EventCard({
       href={`/${event.entity.slug}/${event.slug}`}
       className="group block overflow-hidden rounded-lg border border-ash bg-smoke transition hover:border-gray-500"
     >
-      {thumbs.length === 3 ? (
+      {event.hero_thumb_url ? (
+        <div className="relative aspect-video bg-ash">
+          <Image
+            src={event.hero_thumb_url}
+            alt=""
+            fill
+            sizes="(min-width: 1024px) 25vw, 50vw"
+            className="object-cover transition group-hover:scale-105"
+            unoptimized
+          />
+        </div>
+      ) : thumbs.length === 3 ? (
         <div className="grid grid-cols-3 gap-px bg-ash">
           {thumbs.map((m) => (
             <div key={m.id} className="relative aspect-square">
