@@ -40,6 +40,7 @@ export interface EventBrowseMedia {
 }
 
 type SortKey = 'views' | 'recent' | 'floor';
+type TypeFilter = 'all' | 'video' | 'photo';
 
 const SORT_OPTIONS: Array<{ value: SortKey; label: string }> = [
   { value: 'views', label: 'Most viewed' },
@@ -91,8 +92,25 @@ export function EventBrowse({
   const [selectedSections, setSelectedSections] = useState<Set<SectionTag>>(
     () => new Set(),
   );
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
   const [sortKey, setSortKey] = useState<SortKey>('views');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // Setlist data quality guard — strip non-song entries before rendering.
+  // Some events have "Play Video", empty strings, or other UI labels mixed
+  // into their setlist JSON. We filter those out here rather than touching
+  // the data so the component stays robust to whatever Supabase returns.
+  const cleanSetlist = useMemo(
+    () =>
+      setlist.filter((s) => {
+        if (typeof s !== 'string') return false;
+        const t = s.trim();
+        if (!t) return false;
+        if (t.toLowerCase() === 'play video') return false;
+        return true;
+      }),
+    [setlist],
+  );
 
   // Per-song clip counts — from ALL media, not just the filtered set, so the
   // setlist always reflects what's possible to filter to.
@@ -119,13 +137,35 @@ export function EventBrowse({
     return m;
   }, [media, selectedSong]);
 
-  // Compose filters → sort.
-  const filtered = useMemo(() => {
+  // Pre-type-filter scope — used both for the final filtered list AND for
+  // computing the All/Videos/Photos counts so the pill labels stay accurate
+  // as the song + section filters change.
+  const songSectionScope = useMemo(() => {
     let list = media;
     if (selectedSong) list = list.filter((m) => m.song_tag === selectedSong);
     if (selectedSections.size > 0) {
-      list = list.filter((m) => m.section_tag && selectedSections.has(m.section_tag));
+      list = list.filter(
+        (m) => m.section_tag && selectedSections.has(m.section_tag),
+      );
     }
+    return list;
+  }, [media, selectedSong, selectedSections]);
+
+  const typeCounts = useMemo(() => {
+    let video = 0;
+    let photo = 0;
+    for (const m of songSectionScope) {
+      if (m.file_type === 'video') video += 1;
+      else if (m.file_type === 'photo') photo += 1;
+    }
+    return { all: songSectionScope.length, video, photo };
+  }, [songSectionScope]);
+
+  // Compose filters → sort.
+  const filtered = useMemo(() => {
+    let list = songSectionScope;
+    if (typeFilter === 'video') list = list.filter((m) => m.file_type === 'video');
+    else if (typeFilter === 'photo') list = list.filter((m) => m.file_type === 'photo');
     const sorted = list.slice();
     switch (sortKey) {
       case 'views':
@@ -144,7 +184,7 @@ export function EventBrowse({
         break;
     }
     return sorted;
-  }, [media, selectedSong, selectedSections, sortKey]);
+  }, [songSectionScope, typeFilter, sortKey]);
 
   const expandedMedia = expandedId
     ? filtered.find((m) => m.id === expandedId) ??
@@ -171,7 +211,7 @@ export function EventBrowse({
       {/* ── Left rail (desktop) ─────────────────────────────────────────── */}
       <aside className="hidden md:block md:w-[220px] md:shrink-0 md:self-start md:border-r md:border-white/[0.08] md:bg-[#0d0d0d] md:pr-4">
         <SetlistList
-          setlist={setlist}
+          setlist={cleanSetlist}
           songCounts={songCounts}
           selectedSong={selectedSong}
           onSelectSong={selectSong}
@@ -188,7 +228,7 @@ export function EventBrowse({
       {/* ── Left rail (mobile — horizontal scroll) ──────────────────────── */}
       <div className="-mx-4 space-y-3 border-b border-white/5 px-4 pb-4 md:hidden">
         <MobileSongPills
-          setlist={setlist}
+          setlist={cleanSetlist}
           songCounts={songCounts}
           selectedSong={selectedSong}
           onSelectSong={selectSong}
@@ -202,27 +242,63 @@ export function EventBrowse({
 
       {/* ── Right zone — mosaic ─────────────────────────────────────────── */}
       <section className="min-w-0 flex-1 md:pl-6">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <p className="text-xs text-gray-500">
-            <span className="text-gray-300">{formatCount(filtered.length)}</span> clip
-            {filtered.length === 1 ? '' : 's'}
-            {selectedSong ? (
-              <>
-                <span className="mx-1.5 text-ash">·</span>
-                <span className="text-white">{selectedSong}</span>
-              </>
-            ) : null}
-            {selectedSections.size > 0 ? (
-              <>
-                <span className="mx-1.5 text-ash">·</span>
-                <span className="text-white">
-                  {Array.from(selectedSections)
-                    .map((s) => SECTION_LABELS[s])
-                    .join(' · ')}
-                </span>
-              </>
-            ) : null}
-          </p>
+        {/* Active-filter summary (count chip reflects ALL three filters) */}
+        <p className="mb-3 text-xs text-gray-500">
+          <span className="text-gray-300">{formatCount(filtered.length)}</span> clip
+          {filtered.length === 1 ? '' : 's'}
+          {selectedSong ? (
+            <>
+              <span className="mx-1.5 text-ash">·</span>
+              <span className="text-white">{selectedSong}</span>
+            </>
+          ) : null}
+          {selectedSections.size > 0 ? (
+            <>
+              <span className="mx-1.5 text-ash">·</span>
+              <span className="text-white">
+                {Array.from(selectedSections)
+                  .map((s) => SECTION_LABELS[s])
+                  .join(' · ')}
+              </span>
+            </>
+          ) : null}
+          {typeFilter !== 'all' ? (
+            <>
+              <span className="mx-1.5 text-ash">·</span>
+              <span className="text-white">
+                {typeFilter === 'video' ? 'Videos' : 'Photos'}
+              </span>
+            </>
+          ) : null}
+        </p>
+
+        {/* Type pills (left) + sort dropdown (right) */}
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap gap-1.5">
+            <TypePill
+              active={typeFilter === 'all'}
+              count={typeCounts.all}
+              onClick={() => setTypeFilter('all')}
+            >
+              All
+            </TypePill>
+            <TypePill
+              active={typeFilter === 'video'}
+              count={typeCounts.video}
+              disabled={typeCounts.video === 0}
+              onClick={() => setTypeFilter('video')}
+            >
+              Videos
+            </TypePill>
+            <TypePill
+              active={typeFilter === 'photo'}
+              count={typeCounts.photo}
+              disabled={typeCounts.photo === 0}
+              onClick={() => setTypeFilter('photo')}
+            >
+              Photos
+            </TypePill>
+          </div>
 
           <select
             value={sortKey}
@@ -513,6 +589,42 @@ function PillButton({
       }`}
     >
       {children}
+    </button>
+  );
+}
+
+// ── Type pill (All / Videos / Photos) ──────────────────────────────────────
+
+function TypePill({
+  active,
+  count,
+  disabled = false,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  count: number;
+  disabled?: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`rounded-full border px-3 py-1 font-mono text-[10px] uppercase tracking-widest transition ${
+        active
+          ? 'border-croll bg-croll text-ink'
+          : disabled
+            ? 'cursor-not-allowed border-white/5 bg-white/5 text-gray-600'
+            : 'border-white/15 bg-white/5 text-gray-300 hover:border-white/30 hover:text-white'
+      }`}
+    >
+      {children}
+      <span className={`ml-1.5 tabular-nums ${active ? 'text-ink/70' : ''}`}>
+        · {count}
+      </span>
     </button>
   );
 }
