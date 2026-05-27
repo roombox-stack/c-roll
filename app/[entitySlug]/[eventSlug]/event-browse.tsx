@@ -412,7 +412,11 @@ function SetlistList({
                 <span className="min-w-0 flex-1 truncate">{song}</span>
                 <span
                   className={`font-mono text-[10px] tabular-nums ${
-                    active ? 'text-croll' : 'text-gray-600'
+                    active
+                      ? 'text-croll'
+                      : count > 0
+                        ? 'text-emerald-400'
+                        : 'text-gray-600'
                   }`}
                 >
                   {count}
@@ -513,7 +517,11 @@ function MobileSongPills({
                 {String(i + 1).padStart(2, '0')}
               </span>
               {song}
-              <span className="ml-1.5 font-mono text-[10px] tabular-nums text-gray-500">
+              <span
+                className={`ml-1.5 font-mono text-[10px] tabular-nums ${
+                  count > 0 ? 'text-emerald-400' : 'text-gray-500'
+                }`}
+              >
                 {count}
               </span>
             </PillButton>
