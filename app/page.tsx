@@ -464,7 +464,7 @@ export default async function HomePage() {
 
         {/* ── What a show looks like inside ───────────────────────────────── */}
         {featuredEvent ? (
-          <section id="how-it-works">
+          <section>
             <div className="flex items-end justify-between gap-4">
               <div>
                 <p className="font-mono text-[10px] uppercase tracking-widest text-croll">
@@ -823,12 +823,6 @@ function FeaturedShowPreview({
               <path d="M8 5v14l11-7z" />
             </svg>
             Open this show
-          </Link>
-          <Link
-            href="#how-it-works"
-            className="inline-flex items-center rounded-md border border-white/15 bg-white/5 px-3.5 py-2 text-xs font-medium text-white transition hover:bg-white/10"
-          >
-            How it works
           </Link>
         </div>
       </div>
