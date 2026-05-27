@@ -4,6 +4,7 @@
 // aggregates), then hands it to a client component for filter/sort/toggle.
 // No pagination for V1 — render everything.
 
+import Image from 'next/image';
 import { Nav } from '@/components/nav';
 import { Footer } from '@/components/footer';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -138,12 +139,24 @@ export default async function BrowsePage() {
       <Nav />
 
       {/* ── Header ──────────────────────────────────────────────────────── */}
-      <section className="border-b border-white/5 bg-ink">
-        <div className="mx-auto max-w-7xl px-4 pb-10 pt-14 lg:pb-12 lg:pt-16">
+      <section className="relative overflow-hidden border-b border-white/5 bg-ink">
+        <Image
+          src="/hero-browse.jpg"
+          alt=""
+          fill
+          sizes="100vw"
+          className="object-cover object-right opacity-100"
+          unoptimized
+          priority
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/70 via-30% to-transparent to-50%" />
+        <div className="absolute inset-0 bg-gradient-to-t from-ink via-transparent to-transparent" />
+
+        <div className="relative mx-auto max-w-7xl px-4 pb-10 pt-14 lg:pb-12 lg:pt-16">
           <p className="font-mono text-[10px] uppercase tracking-widest text-croll">
             // C·ROLL CATALOG
           </p>
-          <h1 className="mt-3 font-display text-[clamp(2.25rem,5vw,4rem)] font-black leading-[0.95] tracking-tight text-white">
+          <h1 className="mt-3 font-display text-[clamp(2.25rem,5vw,4rem)] font-black leading-[0.95] tracking-tight text-white [text-shadow:0_2px_24px_rgba(0,0,0,0.7)]">
             Browse.
           </h1>
           <p className="mt-4 max-w-2xl text-base text-gray-400">
