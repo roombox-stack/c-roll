@@ -689,7 +689,15 @@ function FeaturedShowPreview({
   sectionsPresent: Set<SectionTag>;
 }) {
   const ent = firstEntity(event.entity);
-  const setlist = event.setlist ?? [];
+  // Strip non-song entries (empty strings, "Play Video" placeholders) before
+  // rendering — same guard as the event-page setlist rail.
+  const setlist = (event.setlist ?? []).filter((s) => {
+    if (typeof s !== 'string') return false;
+    const t = s.trim();
+    if (!t) return false;
+    if (t.toLowerCase() === 'play video') return false;
+    return true;
+  });
 
   // Active row = the song in the setlist with the most clips (ties: first).
   let activeSong: string | null = null;
