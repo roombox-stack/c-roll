@@ -1,9 +1,9 @@
 // /[entitySlug]/[eventSlug] — event page.
 //
 // Three tabs (URL-driven, not client state):
-//   ?tab=watch (default)  — featured player + setlist song nav + highlights grid
+//   ?tab=watch (default)  — featured player + up-next row + song browser
 //   ?tab=browse           — photo/video + section filters, infinite-scroll grid
-//   ?tab=upload           — link out to /upload/[slug] (full inline flow in Phase 5)
+//   ?tab=upload           — link out to /upload/[slug]
 //
 // Watch tab: fetches up to 100 active media for in-memory setlist counts.
 // Browse tab: fetches first page (24) from DB via the same query used by the
@@ -86,6 +86,27 @@ export async function generateMetadata({
   };
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function fmtDuration(sec: number | null): string {
+  if (!sec) return '';
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return mins <= 1 ? 'just now' : `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return days === 1 ? '1 day ago' : `${days} days ago`;
+}
+
+// ── Page ─────────────────────────────────────────────────────────────────────
+
 export default async function EventPage({
   params,
   searchParams,
@@ -104,7 +125,6 @@ export default async function EventPage({
   const supabase = createAdminClient();
 
   // Pull media for Watch tab setlist counts + contributor count.
-  // (Browse tab fetches its own paginated first page below.)
   const { data: rawMedia } = await supabase
     .from('media')
     .select(
@@ -112,6 +132,7 @@ export default async function EventPage({
     )
     .eq('event_id', event.id)
     .eq('status', 'active')
+    .order('view_count', { ascending: false })
     .limit(100);
 
   const allMedia = (rawMedia ?? []) as unknown as EventMedia[];
@@ -178,7 +199,7 @@ export default async function EventPage({
   ]);
   const initiallyAttending = !!ownAttendance?.data;
 
-  // Setlist with per-song clip counts (only meaningful if event has a setlist).
+  // Setlist with per-song clip counts.
   const setlistCounts = new Map<string, number>();
   for (const m of allMedia) {
     if (m.song_tag) setlistCounts.set(m.song_tag, (setlistCounts.get(m.song_tag) ?? 0) + 1);
@@ -187,53 +208,98 @@ export default async function EventPage({
 
   const baseUrl = `/${entity.slug}/${event.slug}`;
 
+  // Abbreviated date for breadcrumb e.g. "Boston, May 10 2026"
+  const shortDate = new Date(event.event_date + 'T12:00:00').toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
   return (
-    <div className="min-h-screen bg-ink pb-24 text-white md:pb-0">
+    <div className="min-h-screen bg-ink text-white">
       <Nav />
 
-      <section className="border-b border-ash bg-smoke">
-        <div className="mx-auto max-w-7xl px-4 py-8">
-          <Link href={`/${entity.slug}`} className="text-sm text-gray-400 hover:text-white">
-            ← {entity.name}
-          </Link>
-          <h1 className="mt-2 text-3xl font-bold">{event.name}</h1>
-          <p className="mt-1 text-gray-400">
-            {event.venue_name}, {event.city}
-            {event.state ? `, ${event.state}` : ''} · {formatEventDate(event.event_date)}
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
+      <section className="border-b border-ash bg-smoke/40">
+        <div className="mx-auto max-w-7xl px-4 pt-6 pb-0">
+
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-1.5 text-sm text-gray-500">
+            <Link href={`/${entity.slug}`} className="hover:text-white transition">
+              ← {entity.name}
+            </Link>
+            <span>/</span>
+            <span>{event.city}, {shortDate}</span>
+          </div>
+
+          {/* Eyebrow */}
+          <p className="mt-4 font-mono text-[10px] font-semibold uppercase tracking-widest text-red-500">
+            // {entity.name.toUpperCase()}
           </p>
 
-          <div className="mt-5 flex flex-wrap gap-x-8 gap-y-3">
-            <Stat label="Uploads" value={event.upload_count} />
-            <Stat label="Videos" value={event.video_count} />
-            <Stat label="Photos" value={event.photo_count} />
-            <Stat label="Contributors" value={contribKeys.size} />
+          {/* H1 */}
+          <h1 className="mt-1 font-display text-4xl font-black leading-tight md:text-5xl lg:text-6xl">
+            {event.venue_name}
+            <span className="text-white/30"> · </span>
+            {event.city}
+          </h1>
+
+          {/* Meta row */}
+          <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-gray-400">
+            <span className="flex items-center gap-1.5">
+              <svg className="h-3.5 w-3.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" strokeWidth="2" />
+                <line x1="16" y1="2" x2="16" y2="6" strokeWidth="2" />
+                <line x1="8" y1="2" x2="8" y2="6" strokeWidth="2" />
+                <line x1="3" y1="10" x2="21" y2="10" strokeWidth="2" />
+              </svg>
+              {formatEventDate(event.event_date)}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <svg className="h-3.5 w-3.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" strokeWidth="2" />
+                <circle cx="12" cy="10" r="3" strokeWidth="2" />
+              </svg>
+              {event.city}{event.state ? `, ${event.state}` : ''}
+            </span>
           </div>
 
-          <div className="mt-5">
-            <AttendanceButton
-              eventId={event.id}
-              eventUrl={baseUrl}
-              initiallyAttending={initiallyAttending}
-              initialCount={attendeeCount ?? 0}
-              isAuthed={!!currentUser}
-            />
+          {/* Stats row */}
+          <div className="mt-6 flex items-stretch divide-x divide-white/10">
+            <EventStat label="Clips" value={event.upload_count} />
+            <EventStat label="Contributors" value={contribKeys.size} />
+            <EventStat label="Attendance" value={attendeeCount ?? 0} attendance>
+              <AttendanceButton
+                eventId={event.id}
+                eventUrl={baseUrl}
+                initiallyAttending={initiallyAttending}
+                initialCount={attendeeCount ?? 0}
+                isAuthed={!!currentUser}
+              />
+            </EventStat>
           </div>
 
-          <div className="mt-6 flex gap-1 border-b border-ash">
-            <TabLink href={baseUrl} active={tab === 'watch'}>
+          {/* Tab bar */}
+          <div className="mt-8 flex gap-0">
+            <TabLink href={baseUrl} active={tab === 'watch'} sub="curated experience">
               Watch
             </TabLink>
-            <TabLink href={`${baseUrl}?tab=browse`} active={tab === 'browse'}>
+            <TabLink
+              href={`${baseUrl}?tab=browse`}
+              active={tab === 'browse'}
+              sub={`all ${formatCount(event.upload_count)} uploads`}
+            >
               Browse
             </TabLink>
-            <TabLink href={`/upload/${event.slug}`} active={false}>
+            <TabLink href={`/upload/${event.slug}`} active={false} sub="add your clips">
               Upload
             </TabLink>
           </div>
         </div>
       </section>
 
-      <main className="mx-auto max-w-7xl px-4 py-8">
+      {/* ── Main content ────────────────────────────────────────────────────── */}
+      <main className="mx-auto max-w-7xl px-4 py-8 pb-24 md:pb-12">
         {tab === 'watch' ? (
           <WatchTab
             baseUrl={baseUrl}
@@ -241,6 +307,7 @@ export default async function EventPage({
             setlist={setlist}
             setlistCounts={setlistCounts}
             activeSong={searchParams.song}
+            totalUploads={event.upload_count}
           />
         ) : null}
         {tab === 'browse' ? (
@@ -300,11 +367,30 @@ export default async function EventPage({
   );
 }
 
-function Stat({ label, value }: { label: string; value: number }) {
+// ── Header sub-components ────────────────────────────────────────────────────
+
+function EventStat({
+  label,
+  value,
+  attendance,
+  children,
+}: {
+  label: string;
+  value: number;
+  attendance?: boolean;
+  children?: React.ReactNode;
+}) {
   return (
-    <div>
-      <div className="text-2xl font-semibold tabular-nums">{formatCount(value)}</div>
-      <div className="text-xs uppercase tracking-wider text-gray-500">{label}</div>
+    <div className={`flex flex-col justify-between pr-8 ${attendance ? 'pl-8' : 'pr-8'} first:pl-0 last:pr-0`}>
+      <div>
+        <div className="text-2xl font-semibold tabular-nums leading-none">
+          {formatCount(value)}
+        </div>
+        <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-widest text-gray-500">
+          {label}
+        </div>
+      </div>
+      {children && <div className="mt-3">{children}</div>}
     </div>
   );
 }
@@ -312,22 +398,27 @@ function Stat({ label, value }: { label: string; value: number }) {
 function TabLink({
   href,
   active,
+  sub,
   children,
 }: {
   href: string;
   active: boolean;
+  sub: string;
   children: React.ReactNode;
 }) {
   return (
     <Link
       href={href}
-      className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium transition ${
-        active
-          ? 'border-white text-white'
-          : 'border-transparent text-gray-400 hover:text-white'
+      className={`group -mb-px border-b-2 px-5 py-3 transition ${
+        active ? 'border-white' : 'border-transparent hover:border-white/30'
       }`}
     >
-      {children}
+      <span
+        className={`block text-sm font-semibold ${active ? 'text-white' : 'text-gray-400 group-hover:text-white'}`}
+      >
+        {children}
+      </span>
+      <span className="block text-[10px] text-gray-600">{sub}</span>
     </Link>
   );
 }
@@ -340,136 +431,387 @@ function WatchTab({
   setlist,
   setlistCounts,
   activeSong,
+  totalUploads,
 }: {
   baseUrl: string;
   allMedia: EventMedia[];
   setlist: string[];
   setlistCounts: Map<string, number>;
   activeSong?: string;
+  totalUploads: number;
 }) {
-  // Featured = top video by view_count (fall back to top media by like_count).
+  // Featured = top video by view_count with a playback ID.
   const featured =
-    allMedia
-      .filter((m) => m.file_type === 'video' && m.mux_playback_id)
-      .sort((a, b) => b.view_count - a.view_count)[0] ?? null;
+    allMedia.find((m) => m.file_type === 'video' && m.mux_playback_id) ?? null;
 
-  // Grid: filter by activeSong if provided. When a song filter is active we
-  // surface full-song video captures first (viewers searching by song usually
-  // want the complete take), then fall back to like_count desc. Without a song
-  // filter we just sort by likes.
-  const grid = allMedia
-    .filter((m) => !activeSong || m.song_tag === activeSong)
-    .sort((a, b) => {
-      if (activeSong && a.is_full_song !== b.is_full_song) {
-        return a.is_full_song ? -1 : 1;
-      }
-      return b.like_count - a.like_count;
-    });
-
-  // Other clips (horizontal scroll under the featured player).
-  const otherClips = allMedia
+  // Up-next: other playable videos (up to 12).
+  const upNext = allMedia
     .filter((m) => m.id !== featured?.id && m.file_type === 'video' && m.mux_playback_id)
-    .slice(0, 10);
+    .slice(0, 12);
+
+  // Default song for browser: activeSong param, else first setlist song with clips.
+  const displaySong =
+    activeSong ??
+    setlist.find((s) => (setlistCounts.get(s) ?? 0) > 0) ??
+    null;
+
+  const songClips = displaySong
+    ? allMedia
+        .filter((m) => m.song_tag === displaySong)
+        .sort((a, b) => b.view_count - a.view_count)
+    : [];
+
+  const songIndex = displaySong ? setlist.indexOf(displaySong) : -1;
+
+  const SETLIST_PREVIEW = 12;
+
+  if (allMedia.length === 0) {
+    return (
+      <div className="rounded-lg border border-ash bg-smoke p-10 text-center">
+        <p className="text-lg font-semibold">No clips yet</p>
+        <p className="mt-1 text-sm text-gray-400">Be the first to share something from this show.</p>
+        <Link
+          href={`/upload/${baseUrl.split('/')[2]}`}
+          className="mt-4 inline-block rounded bg-croll px-4 py-2 text-sm font-semibold text-ink"
+        >
+          Upload now
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-12">
-      {featured?.mux_playback_id ? (
+
+      {/* ── Featured player ── */}
+      {featured?.mux_playback_id && (
         <section>
-          <div className="rounded-lg overflow-hidden bg-black">
+          {/* Player */}
+          <div className="relative overflow-hidden rounded-xl bg-black">
+            {/* Badge */}
+            <div className="absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">
+              <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+              Most viewed · {formatCount(featured.view_count)} views
+            </div>
             <VideoPlayer
               playbackId={featured.mux_playback_id}
               poster={featured.thumbnail_url ?? undefined}
             />
           </div>
-          {(featured.caption || featured.song_tag) && (
-            <p className="mt-2 text-sm text-gray-300">
-              {featured.song_tag ?? featured.caption}
-            </p>
-          )}
-        </section>
-      ) : null}
 
-      {otherClips.length > 0 ? (
+          {/* Metadata strip below player */}
+          <div className="mt-4 flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              {/* Tags */}
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                {featured.section_tag && (
+                  <span className="rounded border border-ash px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+                    {SECTION_LABELS[featured.section_tag]}
+                  </span>
+                )}
+                {featured.song_tag && (
+                  <span className="rounded border border-ash px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+                    {featured.song_tag}
+                  </span>
+                )}
+              </div>
+              {/* Caption */}
+              {featured.caption && (
+                <p className="text-lg font-semibold leading-snug md:text-xl">
+                  &ldquo;{featured.caption}&rdquo;
+                </p>
+              )}
+              {/* Uploader + meta */}
+              <p className="mt-1.5 text-xs text-gray-500">
+                uploaded by{' '}
+                <span className="text-gray-400">
+                  @{featured.uploader_id ? featured.uploader_id.slice(0, 8) : 'anon'}
+                </span>
+                {' · '}
+                {timeAgo(featured.created_at)}
+                {' · '}
+                {formatCount(featured.view_count)} views
+              </p>
+            </div>
+            {/* Like + share */}
+            <div className="flex shrink-0 items-center gap-2">
+              <span className="flex items-center gap-1 text-sm text-gray-400">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                {formatCount(featured.like_count)}
+              </span>
+              <button className="rounded border border-ash px-3 py-1.5 text-sm font-medium text-gray-300 transition hover:bg-ash hover:text-white">
+                ↗ Share
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── Up next horizontal scroll ── */}
+      {upNext.length > 0 && (
         <section>
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-400">
-            More clips from this show
-          </h2>
-          <div className="grid grid-flow-col auto-cols-[260px] gap-3 overflow-x-auto pb-2">
-            {otherClips.map((m) => (
-              <MediaCard key={m.id} media={m} size="sm" />
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-semibold">Up next from this show</h2>
+            <span className="text-xs text-gray-500">{formatCount(totalUploads)} total uploads</span>
+          </div>
+          <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-3">
+            {upNext.map((m) => (
+              <UpNextCard key={m.id} media={m} />
             ))}
           </div>
         </section>
-      ) : null}
+      )}
 
-      {setlist.length > 0 ? (
+      {/* ── Song browser ── */}
+      {setlist.length > 0 && (
         <section>
-          <h2 className="mb-3 text-lg font-semibold">Browse by song</h2>
-          <ol className="overflow-hidden rounded-lg border border-ash">
-            {setlist.map((song, i) => {
-              const count = setlistCounts.get(song) ?? 0;
-              const enabled = count > 0;
-              return (
-                <li key={`${song}-${i}`} className="border-b border-ash last:border-b-0">
-                  <Link
-                    href={
-                      enabled
-                        ? `${baseUrl}?song=${encodeURIComponent(song)}`
-                        : '#'
-                    }
-                    className={`flex items-center justify-between px-4 py-2 text-sm ${
-                      activeSong === song
-                        ? 'bg-ash text-white'
-                        : enabled
-                          ? 'bg-smoke text-gray-200 hover:bg-ash'
-                          : 'bg-smoke text-gray-600'
-                    }`}
-                  >
-                    <span>
-                      <span className="mr-3 inline-block w-6 text-right text-xs text-gray-500">
-                        {i + 1}.
-                      </span>
-                      {song}
-                    </span>
-                    <span className="text-xs tabular-nums text-gray-400">
-                      {count} {count === 1 ? 'clip' : 'clips'}
-                    </span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ol>
-          {activeSong ? (
-            <div className="mt-3">
-              <Link href={baseUrl} className="text-xs text-gray-400 hover:text-white">
-                ← Clear song filter
-              </Link>
-            </div>
-          ) : null}
-        </section>
-      ) : null}
-
-      <section>
-        <h2 className="mb-3 text-lg font-semibold">
-          {activeSong ? `Clips of “${activeSong}”` : 'Fan highlights'}
-        </h2>
-        {grid.length === 0 ? (
-          <p className="rounded-lg border border-ash bg-smoke p-6 text-sm text-gray-400">
-            No clips uploaded yet. Be the first to share something from this show.
+          {/* Section eyebrow */}
+          <p className="font-mono text-[10px] font-semibold uppercase tracking-widest text-red-500">
+            // STEP THROUGH THE SHOW
           </p>
-        ) : (
+          <h2 className="mt-1 font-heading text-2xl font-bold md:text-3xl">
+            Browse the night, song by song.
+          </h2>
+
+          <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[320px_1fr]">
+            {/* Left: setlist */}
+            <div>
+              <ol className="divide-y divide-white/5 overflow-hidden rounded-lg border border-ash">
+                {setlist.slice(0, SETLIST_PREVIEW).map((song, i) => {
+                  const count = setlistCounts.get(song) ?? 0;
+                  const isActive = displaySong === song;
+                  const hasClips = count > 0;
+                  return (
+                    <li key={`${song}-${i}`}>
+                      <Link
+                        href={hasClips ? `${baseUrl}?song=${encodeURIComponent(song)}` : '#'}
+                        className={`flex items-center gap-3 px-4 py-2.5 text-sm transition ${
+                          isActive
+                            ? 'bg-white/10 text-white'
+                            : hasClips
+                              ? 'text-gray-300 hover:bg-white/5 hover:text-white'
+                              : 'cursor-default text-gray-700'
+                        }`}
+                      >
+                        {/* Number */}
+                        <span className="w-6 shrink-0 text-right text-[11px] tabular-nums text-gray-600">
+                          {String(i + 1).padStart(2, '0')}
+                        </span>
+                        {/* Name */}
+                        <span className="flex-1 truncate font-medium">{song}</span>
+                        {/* Clip count */}
+                        <span
+                          className={`shrink-0 text-[11px] tabular-nums ${
+                            isActive ? 'font-semibold text-croll' : 'text-gray-600'
+                          }`}
+                        >
+                          {count > 0 ? `${count} clips` : '—'}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ol>
+
+              {setlist.length > SETLIST_PREVIEW && (
+                <div className="mt-3 flex items-center justify-between text-[11px] text-gray-600">
+                  <span>+ {setlist.length - SETLIST_PREVIEW} more songs</span>
+                  <Link
+                    href={`${baseUrl}?tab=browse`}
+                    className="hover:text-gray-300 transition"
+                  >
+                    view full setlist →
+                  </Link>
+                </div>
+              )}
+
+              {activeSong && (
+                <div className="mt-3">
+                  <Link href={baseUrl} className="text-[11px] text-gray-500 hover:text-white transition">
+                    ← clear filter
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {/* Right: clips for active song */}
+            {displaySong && songClips.length > 0 ? (
+              <div>
+                {/* Header */}
+                <div className="mb-4">
+                  <h3 className="text-base font-semibold leading-snug">
+                    {displaySong}
+                    <span className="text-white/40"> · </span>
+                    <span className="font-normal text-gray-400">
+                      {songClips.length} clips from this song tonight
+                    </span>
+                  </h3>
+                  {songIndex >= 0 && (
+                    <p className="mt-0.5 font-mono text-[10px] uppercase tracking-widest text-gray-600">
+                      SONG {songIndex + 1}
+                    </p>
+                  )}
+                </div>
+                {/* 2×2 grid */}
+                <div className="grid grid-cols-2 gap-2">
+                  {songClips.slice(0, 4).map((m) => (
+                    <SongClipThumb key={m.id} media={m} />
+                  ))}
+                </div>
+                {songClips.length > 4 && (
+                  <Link
+                    href={`${baseUrl}?tab=browse`}
+                    className="mt-3 block text-center text-xs text-gray-500 hover:text-white transition"
+                  >
+                    View all {songClips.length} clips →
+                  </Link>
+                )}
+              </div>
+            ) : displaySong ? (
+              <div className="flex items-center justify-center rounded-lg border border-dashed border-ash py-16 text-sm text-gray-600">
+                No clips yet for this song
+              </div>
+            ) : null}
+          </div>
+        </section>
+      )}
+
+      {/* If no setlist, show a flat grid of clips */}
+      {setlist.length === 0 && allMedia.length > 0 && (
+        <section>
+          <h2 className="mb-4 font-semibold">Fan highlights</h2>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-            {grid.map((m) => (
+            {allMedia.map((m) => (
               <MediaCard key={m.id} media={m} />
             ))}
           </div>
-        )}
-      </section>
+        </section>
+      )}
     </div>
   );
 }
 
-// ── Browse tab shell (filter pills only — grid is client-rendered) ───────────
+// ── Up Next card ─────────────────────────────────────────────────────────────
+
+function UpNextCard({ media }: { media: EventMedia }) {
+  const thumb = media.thumbnail_url ?? (media.file_type === 'photo' ? media.storage_url : null);
+  const dur = fmtDuration(media.duration_sec);
+  const sectionLabel = media.section_tag ? SECTION_LABELS[media.section_tag] : null;
+
+  return (
+    <div className="w-52 shrink-0 overflow-hidden rounded-lg bg-smoke">
+      {/* Thumbnail */}
+      <div className="relative aspect-video bg-ash">
+        {thumb ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={thumb} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <div className="flex h-full items-center justify-center">
+            <svg className="h-6 w-6 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
+              <polygon points="5,3 19,12 5,21" />
+            </svg>
+          </div>
+        )}
+        {/* Overlay: section tag + duration */}
+        <div className="absolute inset-0 flex items-start justify-between p-2">
+          {sectionLabel && (
+            <span className="rounded bg-black/70 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-white backdrop-blur-sm">
+              {sectionLabel}
+            </span>
+          )}
+          {dur && (
+            <span className="ml-auto rounded bg-black/70 px-1.5 py-0.5 text-[9px] font-mono text-white backdrop-blur-sm">
+              {dur}
+            </span>
+          )}
+        </div>
+        {/* Play button */}
+        {media.file_type === 'video' && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
+              <svg className="ml-0.5 h-3.5 w-3.5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <polygon points="5,3 19,12 5,21" />
+              </svg>
+            </div>
+          </div>
+        )}
+      </div>
+      {/* Meta */}
+      <div className="px-2.5 py-2">
+        {media.song_tag && (
+          <p className="truncate text-[11px] font-medium text-white">{media.song_tag}</p>
+        )}
+        <p className="mt-0.5 flex items-center justify-between text-[10px] text-gray-500">
+          <span>
+            @{media.uploader_id ? media.uploader_id.slice(0, 8) : 'anon'}
+          </span>
+          <span>{formatCount(media.view_count)} views</span>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ── Song clip thumbnail ───────────────────────────────────────────────────────
+
+function SongClipThumb({ media }: { media: EventMedia }) {
+  const thumb = media.thumbnail_url ?? (media.file_type === 'photo' ? media.storage_url : null);
+  const dur = fmtDuration(media.duration_sec);
+  const sectionLabel = media.section_tag ? SECTION_LABELS[media.section_tag] : null;
+
+  return (
+    <div className="group overflow-hidden rounded-lg bg-ash">
+      {/* Thumbnail */}
+      <div className="relative aspect-video">
+        {thumb ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={thumb} alt="" className="h-full w-full object-cover transition group-hover:scale-105" />
+        ) : (
+          <div className="flex h-full items-center justify-center bg-smoke">
+            <svg className="h-6 w-6 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
+              <polygon points="5,3 19,12 5,21" />
+            </svg>
+          </div>
+        )}
+        {/* Overlays */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+        <div className="absolute inset-0 flex items-start justify-between p-2">
+          {sectionLabel && (
+            <span className="rounded bg-black/60 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-white">
+              {sectionLabel}
+            </span>
+          )}
+          {dur && (
+            <span className="ml-auto rounded bg-black/60 px-1.5 py-0.5 text-[9px] font-mono text-white">
+              {dur}
+            </span>
+          )}
+        </div>
+        {/* Play */}
+        {media.file_type === 'video' && (
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 transition group-hover:opacity-100">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/90">
+              <svg className="ml-0.5 h-4 w-4 text-ink" fill="currentColor" viewBox="0 0 24 24">
+                <polygon points="5,3 19,12 5,21" />
+              </svg>
+            </div>
+          </div>
+        )}
+        {/* Bottom info */}
+        <div className="absolute bottom-0 left-0 right-0 p-2">
+          <p className="flex items-center justify-between text-[10px] text-white/70">
+            <span>@{media.uploader_id ? media.uploader_id.slice(0, 8) : 'anon'}</span>
+            <span>{formatCount(media.view_count)} views</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Browse tab shell ──────────────────────────────────────────────────────────
 
 function BrowseTabShell({
   baseUrl,
