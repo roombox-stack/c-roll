@@ -4,7 +4,7 @@ import { Footer } from '@/components/footer';
 import { ContactForm } from './contact-form';
 
 export const metadata: Metadata = {
-  title: 'Contact — Showside',
+  title: 'Contact — c-roll',
   alternates: { canonical: '/contact' },
 };
 

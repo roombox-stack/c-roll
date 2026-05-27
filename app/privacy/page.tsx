@@ -3,7 +3,7 @@ import { Nav } from '@/components/nav';
 import { Footer } from '@/components/footer';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy — Showside',
+  title: 'Privacy Policy — c-roll',
   alternates: { canonical: '/privacy' },
 };
 

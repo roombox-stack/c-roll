@@ -107,7 +107,7 @@ export default async function EditEventPage({ params }: { params: { id: string }
             />
             <a
               href={qrUrlHi}
-              download={`showside-${event.slug}.png`}
+              download={`c-roll-${event.slug}.png`}
               className="mt-3 block rounded border border-ash px-3 py-2 text-center text-sm hover:bg-ash"
             >
               Download high-res PNG

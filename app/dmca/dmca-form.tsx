@@ -52,7 +52,7 @@ export function DmcaForm() {
           required
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          placeholder="https://showside.app/watch/..."
+          placeholder="https://c-roll.app/watch/..."
           className="w-full rounded-md border border-ash bg-ink px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-gray-500 focus:outline-none"
         />
       </div>

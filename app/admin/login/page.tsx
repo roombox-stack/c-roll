@@ -20,7 +20,7 @@ export default function AdminLoginPage({
         className="w-full max-w-sm space-y-4 rounded-lg border border-ash bg-smoke p-6"
       >
         <div>
-          <h1 className="text-xl font-semibold">Showside admin</h1>
+          <h1 className="text-xl font-semibold">c-roll admin</h1>
           <p className="mt-1 text-sm text-gray-400">Enter the admin key to continue.</p>
         </div>
 

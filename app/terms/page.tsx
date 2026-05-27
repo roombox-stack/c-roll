@@ -3,7 +3,7 @@ import { Nav } from '@/components/nav';
 import { Footer } from '@/components/footer';
 
 export const metadata: Metadata = {
-  title: 'Terms of Service — Showside',
+  title: 'Terms of Service — c-roll',
   alternates: { canonical: '/terms' },
 };
 
@@ -20,7 +20,7 @@ export default function TermsPage() {
           <section>
             <h2 className="mb-3 text-xl font-semibold text-white">1. Acceptance</h2>
             <p>
-              By using Showside you agree to these terms. If you do not agree, please do not
+              By using c-roll you agree to these terms. If you do not agree, please do not
               use the service.
             </p>
           </section>
@@ -28,14 +28,14 @@ export default function TermsPage() {
           <section>
             <h2 className="mb-3 text-xl font-semibold text-white">2. Uploaded content</h2>
             <p>
-              You retain ownership of content you upload. By uploading, you grant Showside a
+              You retain ownership of content you upload. By uploading, you grant c-roll a
               worldwide, non-exclusive, royalty-free license to store, display, and distribute
               your content as part of the platform. You represent that you own or have the right
               to upload the content, and that it does not infringe any third-party rights.
             </p>
             <p className="mt-3">
               You may not upload content that is illegal, defamatory, or sexually explicit.
-              Showside reserves the right to remove any content at its discretion.
+              c-roll reserves the right to remove any content at its discretion.
             </p>
           </section>
 
@@ -52,8 +52,8 @@ export default function TermsPage() {
           <section>
             <h2 className="mb-3 text-xl font-semibold text-white">4. Copyright</h2>
             <p>
-              Showside respects intellectual property rights. If you believe content on
-              Showside infringes your copyright, please submit a notice via our{' '}
+              c-roll respects intellectual property rights. If you believe content on
+              c-roll infringes your copyright, please submit a notice via our{' '}
               <a href="/dmca" className="text-white underline hover:no-underline">DMCA page</a>.
               We will respond and remove infringing content as required by law.
             </p>
@@ -62,16 +62,16 @@ export default function TermsPage() {
           <section>
             <h2 className="mb-3 text-xl font-semibold text-white">5. Disclaimer of warranties</h2>
             <p>
-              Showside is provided "as is" without warranties of any kind. We do not guarantee
+              c-roll is provided "as is" without warranties of any kind. We do not guarantee
               uptime, accuracy of content, or fitness for any particular purpose. Fan-uploaded
-              content represents the views of individual uploaders, not Showside.
+              content represents the views of individual uploaders, not c-roll.
             </p>
           </section>
 
           <section>
             <h2 className="mb-3 text-xl font-semibold text-white">6. Limitation of liability</h2>
             <p>
-              To the maximum extent permitted by law, Showside is not liable for any indirect,
+              To the maximum extent permitted by law, c-roll is not liable for any indirect,
               incidental, or consequential damages arising from your use of the service.
             </p>
           </section>

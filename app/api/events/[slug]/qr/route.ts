@@ -69,7 +69,7 @@ export async function GET(
       'Content-Length': String(png.byteLength),
       // Caches are fine for 1 day — the QR target URL never changes per slug.
       'Cache-Control': 'public, max-age=86400, immutable',
-      'Content-Disposition': `inline; filename="showside-${event.slug}.png"`,
+      'Content-Disposition': `inline; filename="c-roll-${event.slug}.png"`,
     },
   });
 }

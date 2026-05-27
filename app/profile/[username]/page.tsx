@@ -52,7 +52,7 @@ export async function generateMetadata({
   const name = profile.display_name ?? profile.username;
   return {
     title: `${name} (@${profile.username})`,
-    description: profile.bio ?? `${name}'s shows and uploads on Showside.`,
+    description: profile.bio ?? `${name}'s shows and uploads on c-roll.`,
     alternates: { canonical: `/profile/${profile.username}` },
   };
 }

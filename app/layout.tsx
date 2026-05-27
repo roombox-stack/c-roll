@@ -27,21 +27,21 @@ const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),
   title: {
-    default: 'Showside — fan footage from every live event',
-    template: '%s | Showside',
+    default: 'c-roll — fan footage from every live event',
+    template: '%s | c-roll',
   },
   description:
     'Fan-shot photos and videos from concerts, games, and live events. Relive the show.',
   alternates: { canonical: '/' },
   openGraph: {
     type: 'website',
-    siteName: 'Showside',
-    title: 'Showside — fan footage from every live event',
+    siteName: 'c-roll',
+    title: 'c-roll — fan footage from every live event',
     description: 'Fan-shot photos and videos from concerts, games, and live events. Relive the show.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Showside — fan footage from every live event',
+    title: 'c-roll — fan footage from every live event',
     description: 'Fan-shot photos and videos from concerts, games, and live events.',
   },
 };

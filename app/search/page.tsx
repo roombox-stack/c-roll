@@ -9,7 +9,7 @@ import { SearchView } from './search-view';
 
 export const metadata: Metadata = {
   title: 'Search',
-  description: 'Search artists, teams, and shows on Showside.',
+  description: 'Search artists, teams, and shows on c-roll.',
 };
 
 export default function SearchPage({

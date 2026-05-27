@@ -4,7 +4,7 @@ import { Footer } from '@/components/footer';
 import { DmcaForm } from './dmca-form';
 
 export const metadata: Metadata = {
-  title: 'DMCA Takedown — Showside',
+  title: 'DMCA Takedown — c-roll',
   alternates: { canonical: '/dmca' },
 };
 
@@ -17,8 +17,8 @@ export default function DmcaPage() {
 
         <div className="mt-8 space-y-6 text-gray-300 leading-relaxed">
           <p>
-            Showside respects intellectual property rights and complies with the Digital
-            Millennium Copyright Act (DMCA). If you believe content hosted on Showside
+            c-roll respects intellectual property rights and complies with the Digital
+            Millennium Copyright Act (DMCA). If you believe content hosted on c-roll
             infringes your copyright, you may submit a takedown notice below.
           </p>
 

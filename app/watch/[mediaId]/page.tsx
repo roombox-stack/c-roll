@@ -69,8 +69,8 @@ export async function generateMetadata({
   const entity = ev ? (Array.isArray(ev.entity) ? ev.entity[0] : ev.entity) : null;
   const title = m.song_tag
     ? `${m.song_tag} — ${entity?.name ?? ''}`
-    : `${entity?.name ?? 'Showside'} — ${ev?.venue_name ?? ''}`;
-  const description = m.caption ?? `Fan-shot ${m.file_type} from ${entity?.name ?? 'Showside'}.`;
+    : `${entity?.name ?? 'c-roll'} — ${ev?.venue_name ?? ''}`;
+  const description = m.caption ?? `Fan-shot ${m.file_type} from ${entity?.name ?? 'c-roll'}.`;
   return {
     title,
     description,

@@ -7,7 +7,7 @@ import { UploadFlow } from './upload-flow';
 
 export const metadata: Metadata = {
   title: 'Upload',
-  description: 'Add your photos and videos to a show on Showside.',
+  description: 'Add your photos and videos to a show on c-roll.',
 };
 
 export default function UploadIndexPage() {

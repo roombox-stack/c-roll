@@ -7,7 +7,7 @@ import { SignupForm } from './signup-form';
 
 export const metadata = {
   title: 'Sign up',
-  description: 'Create a Showside account to track shows and get credited for uploads.',
+  description: 'Create a c-roll account to track shows and get credited for uploads.',
 };
 
 export default function SignupPage({

@@ -18,7 +18,7 @@ export default function AdminShellLayout({ children }: { children: React.ReactNo
     <div className="flex min-h-screen bg-ink text-white">
       <aside className="flex w-56 shrink-0 flex-col border-r border-ash bg-smoke p-4">
         <Link href="/admin" className="mb-6 block text-lg font-semibold">
-          Showside admin
+          c-roll admin
         </Link>
         <nav className="flex-1 space-y-1">
           {NAV.map((item) => (
