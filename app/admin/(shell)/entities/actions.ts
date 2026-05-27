@@ -53,13 +53,23 @@ export async function createEntity(formData: FormData) {
   redirect(`/admin/entities/${data.id}`);
 }
 
+export async function setHeroImage(entityId: string, heroImageUrl: string | null) {
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from('entities')
+    .update({ hero_image_url: heroImageUrl || null })
+    .eq('id', entityId);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/admin/entities/${entityId}`);
+  revalidatePath('/admin/entities');
+}
+
 export async function updateEntity(id: string, formData: FormData) {
   const name = getField(formData, 'name');
   const slug = getField(formData, 'slug');
   const type = getField(formData, 'type');
   const genre = getField(formData, 'genre');
   const bio = getField(formData, 'bio');
-  const hero_image_url = getField(formData, 'hero_image_url');
   const verified = formData.get('verified') === 'on';
   const claimed = formData.get('claimed') === 'on';
 
@@ -76,7 +86,6 @@ export async function updateEntity(id: string, formData: FormData) {
       type,
       genre: genre || null,
       bio: bio || null,
-      hero_image_url: hero_image_url || null,
       verified,
       claimed,
     })

@@ -5,10 +5,10 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: '#0a0a0b',
+        ink: '#0d0b0a',
         smoke: '#15151a',
         ash: '#27272d',
-        croll: '#e8342a',
+        croll: '#ffcc00',
       },
       fontFamily: {
         sans: ['var(--font-sans)', 'Inter', 'system-ui', 'sans-serif'],

@@ -220,31 +220,38 @@ export default async function EntityPage({
 
       {/* ── Hero ────────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden bg-ink">
-        {/* Background: hero image at low opacity behind a dark gradient */}
+        {/* Background: concert photo at high opacity — cinematic, movie-poster feel */}
         {entity.hero_image_url ? (
           <Image
             src={entity.hero_image_url}
             alt=""
             fill
             sizes="100vw"
-            className="object-cover object-top opacity-25"
+            className="object-cover object-top opacity-55"
             unoptimized
             priority
           />
         ) : null}
-        {/* Gradient: full black on left so text is always readable */}
-        <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/90 to-ink/50" />
-        <div className="absolute inset-0 bg-gradient-to-t from-ink via-transparent to-transparent" />
+        {/*
+          Two-layer gradient approach:
+          • Left-to-right: heavy ink on the left third (where text lives),
+            fading to near-transparent on the right so the photo reads clearly.
+          • Bottom vignette: subtle darkening only at the very bottom edge.
+          Together these let the right side of the image glow through fully
+          while keeping the left text column legible.
+        */}
+        <div className="absolute inset-0 bg-gradient-to-l from-ink from-[5%] via-ink/75 via-[38%] to-ink/10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-ink/50 via-transparent via-[30%] to-transparent" />
 
         <div className="relative mx-auto max-w-7xl px-4 pb-16 pt-14 lg:pb-20 lg:pt-16">
           <div className="grid items-start gap-10 lg:grid-cols-[1fr_460px] lg:gap-14">
 
-            {/* Left column */}
-            <div className="space-y-6">
+            {/* Left column — text-shadow on the whole column keeps every element legible */}
+            <div className="space-y-6 [text-shadow:0_1px_12px_rgba(0,0,0,0.55)]">
 
               {/* Eyebrow / breadcrumb */}
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[10px] uppercase tracking-widest">
-                <span className="text-croll">In Showside</span>
+                <span className="text-croll">In C·ROLL</span>
                 {allEvents.length > 0 && (
                   <>
                     <span className="text-ash">·</span>
@@ -260,7 +267,7 @@ export default async function EntityPage({
               </div>
 
               {/* Artist name — Archivo Black, massive */}
-              <h1 className="font-display text-[clamp(2.75rem,9vw,6.5rem)] font-black leading-[0.93] tracking-tight text-white">
+              <h1 className="font-display text-[clamp(2.75rem,9vw,6.5rem)] font-black leading-[0.93] tracking-tight text-white [text-shadow:0_2px_32px_rgba(0,0,0,0.8)]">
                 {entity.name}
               </h1>
 
@@ -432,7 +439,7 @@ export default async function EntityPage({
       {allEvents.length > 0 ? (
         <section id="archive" className="border-t border-white/5 bg-smoke/40">
           <div className="mx-auto max-w-7xl px-4 py-16">
-            <RedEyebrow>SHOWSIDE ARCHIVE</RedEyebrow>
+            <RedEyebrow>C·ROLL ARCHIVE</RedEyebrow>
             <div className="mt-4 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="font-heading text-3xl font-bold text-white md:text-4xl">

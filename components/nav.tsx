@@ -1,6 +1,6 @@
 // Sticky top navigation — c-roll design.
 //
-// Left: SHOWSIDE wordmark · Center: topic nav · Right: search icon, Upload (red), avatar
+// Left: c-roll wordmark · Center: topic nav · Right: search icon, Upload (orange), avatar
 
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
@@ -57,8 +57,8 @@ export async function Nav() {
     <header className="sticky top-0 z-40 border-b border-white/5 bg-ink/90 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-7xl items-center gap-4 px-4">
         {/* Wordmark */}
-        <Link href="/" className="shrink-0 text-sm font-bold tracking-[0.2em] text-white">
-          SHOWSIDE
+        <Link href="/" className="shrink-0 font-display text-lg font-black tracking-tight text-white">
+          c<span className="text-croll">·</span>roll
         </Link>
 
         {/* Center nav */}

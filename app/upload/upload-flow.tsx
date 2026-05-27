@@ -452,78 +452,135 @@ function FilesStep({
   onNext: () => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [dragging, setDragging] = useState(false);
   const totalBytes = files.reduce((s, f) => s + f.file.size, 0);
   const totalMB = (totalBytes / 1024 / 1024).toFixed(1);
-
-  function handlePick() {
-    inputRef.current?.click();
-  }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (e.target.files && e.target.files.length > 0) {
       onAdd(e.target.files);
-      e.target.value = '';
+      e.target.value = ''; // reset so same file can be re-added after removal
     }
   }
+
+  function handleDragOver(e: React.DragEvent) {
+    e.preventDefault();
+    setDragging(true);
+  }
+
+  function handleDragLeave(e: React.DragEvent) {
+    // Only clear if leaving the drop zone entirely (not just a child element)
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setDragging(false);
+    }
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setDragging(false);
+    if (e.dataTransfer.files.length > 0) onAdd(e.dataTransfer.files);
+  }
+
+  const hasFiles = files.length > 0;
 
   return (
     <section className="space-y-4">
       <h2 className="text-xl font-semibold">Add photos &amp; videos</h2>
 
+      {/* Hidden input — multiple lets the OS file picker do multi-select natively */}
       <input
         ref={inputRef}
         type="file"
         accept="image/*,video/*"
         multiple
         onChange={handleChange}
-        className="hidden"
+        className="sr-only"
       />
 
-      {files.length === 0 ? (
-        <button
-          type="button"
-          onClick={handlePick}
-          className="flex h-40 w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-ash bg-smoke text-sm text-gray-300 hover:border-gray-500 hover:bg-ash"
+      {!hasFiles ? (
+        /* ── Empty state: full drop zone ── */
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => inputRef.current?.click()}
+          onKeyDown={(e) => e.key === 'Enter' && inputRef.current?.click()}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={`flex h-52 w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed transition ${
+            dragging
+              ? 'border-white bg-white/5'
+              : 'border-ash bg-smoke hover:border-gray-500 hover:bg-ash/50'
+          }`}
         >
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400" aria-hidden>
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
             <polyline points="17 8 12 3 7 8" />
             <line x1="12" y1="3" x2="12" y2="15" />
           </svg>
-          <span className="font-medium">Choose from camera roll</span>
-          <span className="text-xs text-gray-500">Up to 20 files, 500 MB total</span>
-        </button>
+          <div className="text-center">
+            <p className="font-semibold text-white">
+              {dragging ? 'Drop to add' : 'Select photos & videos'}
+            </p>
+            <p className="mt-1 text-xs text-gray-500">
+              Pick as many as you want at once &middot; up to 20 files, 500 MB
+            </p>
+          </div>
+        </div>
       ) : (
-        <>
+        /* ── Files selected: thumbnail grid + drop zone overlay ── */
+        <div
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={`relative rounded-xl transition ${dragging ? 'ring-2 ring-white/40' : ''}`}
+        >
+          {dragging && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-ink/80 text-sm font-semibold text-white">
+              Drop to add files
+            </div>
+          )}
+
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
             {files.map((f) => (
               <FileThumb key={f.id} file={f} onRemove={() => onRemove(f.id)} />
             ))}
+
             {files.length < MAX_FILES ? (
               <button
                 type="button"
-                onClick={handlePick}
-                className="flex aspect-square items-center justify-center rounded-lg border-2 border-dashed border-ash bg-smoke text-2xl text-gray-400 hover:border-gray-500 hover:bg-ash"
+                onClick={() => inputRef.current?.click()}
+                className="flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-ash bg-smoke text-gray-400 transition hover:border-gray-500 hover:bg-ash"
                 aria-label="Add more files"
               >
-                +
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                <span className="text-[10px]">Add more</span>
               </button>
             ) : null}
           </div>
-          <p className="text-xs text-gray-400">
-            {files.length} {files.length === 1 ? 'file' : 'files'} · {totalMB} MB
+
+          <p className="mt-2 text-xs text-gray-500">
+            {files.length} {files.length === 1 ? 'file' : 'files'} &middot; {totalMB} MB
+            {files.length < MAX_FILES ? (
+              <span className="ml-2 text-gray-600">
+                (can add {MAX_FILES - files.length} more)
+              </span>
+            ) : null}
           </p>
-        </>
+        </div>
       )}
 
-      {files.length > 0 ? (
+      {hasFiles ? (
         <div className="sticky bottom-0 -mx-4 mt-6 border-t border-ash bg-ink/95 px-4 py-3 backdrop-blur">
           <button
             type="button"
             onClick={onNext}
             className="h-12 w-full rounded-full bg-white text-base font-semibold text-ink hover:bg-gray-200"
           >
-            Continue
+            Continue with {files.length} {files.length === 1 ? 'file' : 'files'}
           </button>
         </div>
       ) : null}
