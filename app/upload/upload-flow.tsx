@@ -599,10 +599,32 @@ function FilesStep({
   );
 }
 
+/**
+ * Heuristic: did macOS/iOS Photos hand us the still preview of a video
+ * instead of the underlying movie file? Photos exports Live Photos and
+ * video previews as JPEG with a characteristic UUID-style filename
+ * (e.g. AB88CDC2-0103-456A-B364-F8ADF40D9545_1_105_c.jpeg). We can't see
+ * the original asset type from the browser, but we can spot the filename
+ * pattern and warn the user before they upload a still by mistake.
+ */
+function looksLikePhotosLibraryStill(file: File): boolean {
+  if (!file.type.startsWith('image/')) return false;
+  // Apple Photos export names: 8-4-4-4-12 hex UUID, often followed by
+  // _N_NNN_X suffix and a .jpeg/.heic/.png extension.
+  return /^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}(_.*)?\.(jpe?g|heic|heif|png)$/i.test(
+    file.name,
+  );
+}
+
 function FileThumb({ file, onRemove }: { file: PendingFile; onRemove: () => void }) {
   const isVideo = file.file.type.startsWith('video/');
+  const stillWarning = !isVideo && looksLikePhotosLibraryStill(file.file);
   return (
-    <div className="relative aspect-square overflow-hidden rounded-lg bg-smoke">
+    <div
+      className={`relative aspect-square overflow-hidden rounded-lg bg-smoke ${
+        stillWarning ? 'ring-2 ring-amber-500/70' : ''
+      }`}
+    >
       {isVideo ? (
         <video
           src={file.previewUrl}
@@ -618,6 +640,17 @@ function FileThumb({ file, onRemove }: { file: PendingFile; onRemove: () => void
         <span className="absolute bottom-1 left-1 rounded bg-black/70 px-1.5 py-0.5 text-[10px] text-white">
           video
         </span>
+      ) : null}
+      {stillWarning ? (
+        <div
+          className="absolute inset-x-0 bottom-0 flex items-start gap-1 bg-amber-500/95 px-1.5 py-1 text-[9px] font-medium leading-tight text-ink"
+          title="macOS Photos drops a JPEG preview when you drag a video — pick the original from Finder to upload as video."
+        >
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden className="mt-px shrink-0">
+            <path d="M12 2 1 21h22L12 2zm0 6 7 12H5l7-12zm-1 3v4h2v-4h-2zm0 5v2h2v-2h-2z" />
+          </svg>
+          <span>Looks like a video still — drop the original from Finder for video.</span>
+        </div>
       ) : null}
       <button
         type="button"
