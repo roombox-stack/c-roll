@@ -1,14 +1,14 @@
-// Infinite-scroll grid for the event page Browse tab.
+// Infinite-scroll masonry grid for the event page Browse tab.
 //
 // The server component renders the first page; this client component appends
 // subsequent pages as the user scrolls to the bottom sentinel.
-// Filter/section changes come through URL params → full SSR re-render, so we
-// don't need to track them in local state here.
+// Filter/section changes come through URL params → full SSR re-render.
 
 'use client';
 
 import { useEffect, useRef, useState, useTransition } from 'react';
-import { MediaCard, type MediaCardData } from './media-card';
+import { MosaicCard } from './mosaic-card';
+import type { MediaCardData } from './media-card';
 
 interface BrowseGridProps {
   initialItems: MediaCardData[];
@@ -66,7 +66,7 @@ export function BrowseGrid({
       (entries) => {
         if (entries[0]?.isIntersecting) loadMore();
       },
-      { rootMargin: '200px' },
+      { rootMargin: '300px' },
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
@@ -75,7 +75,7 @@ export function BrowseGrid({
 
   if (items.length === 0) {
     return (
-      <p className="rounded-lg border border-ash bg-smoke p-6 text-sm text-gray-400">
+      <p className="rounded-lg border border-ash bg-smoke p-8 text-center text-sm text-gray-400">
         No media matching these filters.
       </p>
     );
@@ -83,14 +83,17 @@ export function BrowseGrid({
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+      {/* Masonry via CSS columns — videos are 16:9, photos 4:5, so heights vary naturally */}
+      <div className="columns-2 gap-2 sm:columns-3 lg:columns-4 xl:columns-5">
         {items.map((m) => (
-          <MediaCard key={m.id} media={m} />
+          <div key={m.id} className="mb-2 break-inside-avoid">
+            <MosaicCard media={m} />
+          </div>
         ))}
       </div>
 
       {!exhausted && (
-        <div ref={sentinelRef} className="mt-6 flex justify-center py-4">
+        <div ref={sentinelRef} className="mt-8 flex justify-center py-4">
           {isPending ? (
             <span className="text-sm text-gray-500">Loading…</span>
           ) : (

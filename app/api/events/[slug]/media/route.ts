@@ -62,7 +62,7 @@ export async function GET(
   let query = supabase
     .from('media')
     .select(
-      'id, file_type, storage_url, thumbnail_url, mux_playback_id, duration_sec, song_tag, section_tag, caption, view_count, like_count, is_full_song, created_at',
+      'id, file_type, storage_url, thumbnail_url, mux_playback_id, duration_sec, song_tag, section_tag, caption, view_count, like_count, is_full_song, uploader_id, upload_session, created_at',
     )
     .eq('event_id', event.id)
     .eq('status', 'active')

@@ -17,6 +17,9 @@ export type MediaCardData = {
   duration_sec: number | null;
   caption: string | null;
   song_tag: string | null;
+  section_tag?: string | null;
+  uploader_id?: string | null;
+  upload_session?: string | null;
   view_count: number;
   like_count: number;
   is_full_song?: boolean;

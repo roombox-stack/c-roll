@@ -37,6 +37,7 @@ interface EventRow {
   city: string;
   state: string | null;
   event_date: string;
+  tour_name: string | null;
   setlist: string[] | null;
   upload_count: number;
   photo_count: number;
@@ -58,7 +59,7 @@ async function fetchEvent(eventSlug: string): Promise<EventRow | null> {
   const { data } = await supabase
     .from('events')
     .select(
-      'id, entity_id, slug, name, venue_name, city, state, event_date, setlist, upload_count, photo_count, video_count, entity:entities(id, slug, name)',
+      'id, entity_id, slug, name, venue_name, city, state, event_date, tour_name, setlist, upload_count, photo_count, video_count, entity:entities(id, slug, name)',
     )
     .eq('slug', eventSlug)
     .limit(1)
@@ -128,7 +129,7 @@ export default async function EventPage({
   const { data: rawMedia } = await supabase
     .from('media')
     .select(
-      'id, file_type, storage_url, thumbnail_url, mux_playback_id, duration_sec, song_tag, section_tag, caption, view_count, like_count, is_full_song, created_at, upload_session, uploader_id',
+      'id, file_type, storage_url, thumbnail_url, mux_playback_id, duration_sec, song_tag, section_tag, caption, view_count, like_count, is_full_song, uploader_id, upload_session, created_at',
     )
     .eq('event_id', event.id)
     .eq('status', 'active')
@@ -153,7 +154,7 @@ export default async function EventPage({
     let browseQ = supabase
       .from('media')
       .select(
-        'id, file_type, storage_url, thumbnail_url, mux_playback_id, duration_sec, song_tag, section_tag, caption, view_count, like_count, is_full_song, created_at',
+        'id, file_type, storage_url, thumbnail_url, mux_playback_id, duration_sec, song_tag, section_tag, caption, view_count, like_count, is_full_song, uploader_id, upload_session, created_at',
       )
       .eq('event_id', event.id)
       .eq('status', 'active')
@@ -206,6 +207,14 @@ export default async function EventPage({
   }
   const setlist = Array.isArray(event.setlist) ? event.setlist : [];
 
+  // Section counts (computed from allMedia — approximate for large events).
+  const sectionCounts: Record<string, number> = {};
+  for (const m of allMedia) {
+    if (m.section_tag) {
+      sectionCounts[m.section_tag] = (sectionCounts[m.section_tag] ?? 0) + 1;
+    }
+  }
+
   const baseUrl = `/${entity.slug}/${event.slug}`;
 
   // Abbreviated date for breadcrumb e.g. "Boston, May 10 2026"
@@ -232,9 +241,9 @@ export default async function EventPage({
             <span>{event.city}, {shortDate}</span>
           </div>
 
-          {/* Eyebrow */}
+          {/* Eyebrow — tour name if set, else entity name */}
           <p className="mt-4 font-mono text-[10px] font-semibold uppercase tracking-widest text-red-500">
-            // {entity.name.toUpperCase()}
+            // {(event.tour_name ?? entity.name).toUpperCase()}
           </p>
 
           {/* H1 */}
@@ -315,6 +324,10 @@ export default async function EventPage({
             baseUrl={baseUrl}
             filter={searchParams.filter}
             section={searchParams.section as SectionTag | undefined}
+            totalCount={event.upload_count}
+            videoCount={event.video_count}
+            photoCount={event.photo_count}
+            sectionCounts={sectionCounts}
           >
             <BrowseGrid
               initialItems={browseInitialItems}
@@ -817,45 +830,76 @@ function BrowseTabShell({
   baseUrl,
   filter,
   section,
+  totalCount,
+  videoCount,
+  photoCount,
+  sectionCounts,
   children,
 }: {
   baseUrl: string;
   filter?: string;
   section?: SectionTag;
+  totalCount: number;
+  videoCount: number;
+  photoCount: number;
+  sectionCounts: Record<string, number>;
   children: React.ReactNode;
 }) {
-  const params = (overrides: { filter?: string | null; section?: string | null }) => {
+  function mkHref(overrides: { filter?: string | null; section?: string | null }) {
     const f = overrides.filter !== undefined ? overrides.filter : filter;
     const s = overrides.section !== undefined ? overrides.section : section;
     const sp = new URLSearchParams({ tab: 'browse' });
     if (f) sp.set('filter', f);
     if (s) sp.set('section', s);
     return `${baseUrl}?${sp.toString()}`;
-  };
+  }
+
+  // Only show section pills that have at least 1 item.
+  const activeSections = SECTION_ORDER.filter((s) => (sectionCounts[s] ?? 0) > 0);
 
   return (
-    <div className="space-y-5">
-      <div className="space-y-3">
-        <div className="flex flex-wrap gap-2">
-          <Pill href={params({ filter: null })} active={!filter}>All</Pill>
-          <Pill href={params({ filter: 'photos' })} active={filter === 'photos'}>Photos</Pill>
-          <Pill href={params({ filter: 'videos' })} active={filter === 'videos'}>Videos</Pill>
-        </div>
-        <div className="flex flex-wrap gap-2 border-t border-ash pt-3">
-          <Pill href={params({ section: null })} active={!section}>All sections</Pill>
-          {SECTION_ORDER.map((s) => (
-            <Pill key={s} href={params({ section: s })} active={section === s}>
-              {SECTION_LABELS[s]}
-            </Pill>
-          ))}
+    <div className="space-y-4">
+      {/* Horizontally scrollable filter row */}
+      <div className="-mx-4 overflow-x-auto px-4 pb-1">
+        <div className="flex items-center gap-1.5" style={{ minWidth: 'max-content' }}>
+          <FilterPill href={mkHref({ filter: null, section: null })} active={!filter && !section}>
+            All <CountBadge active={!filter && !section}>{formatCount(totalCount)}</CountBadge>
+          </FilterPill>
+          <FilterPill href={mkHref({ filter: 'videos', section: null })} active={filter === 'videos' && !section}>
+            Videos <CountBadge active={filter === 'videos' && !section}>{formatCount(videoCount)}</CountBadge>
+          </FilterPill>
+          <FilterPill href={mkHref({ filter: 'photos', section: null })} active={filter === 'photos' && !section}>
+            Photos <CountBadge active={filter === 'photos' && !section}>{formatCount(photoCount)}</CountBadge>
+          </FilterPill>
+
+          {activeSections.length > 0 && (
+            <span className="mx-1 h-4 w-px shrink-0 bg-white/10" />
+          )}
+
+          {activeSections.map((s) => {
+            const isActive = section === s;
+            return (
+              <FilterPill key={s} href={mkHref({ section: s, filter: null })} active={isActive}>
+                {SECTION_LABELS[s]}
+                <CountBadge active={isActive}>{sectionCounts[s]}</CountBadge>
+              </FilterPill>
+            );
+          })}
+
+          <span className="mx-1 h-4 w-px shrink-0 bg-white/10" />
+
+          <FilterPill href={baseUrl} active={false}>
+            By song
+          </FilterPill>
         </div>
       </div>
+
       {children}
     </div>
   );
 }
 
-function Pill({
+function FilterPill({
   href,
   active,
   children,
@@ -867,13 +911,21 @@ function Pill({
   return (
     <Link
       href={href}
-      className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+      className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition ${
         active
           ? 'bg-white text-ink'
-          : 'border border-ash text-gray-300 hover:bg-ash hover:text-white'
+          : 'border border-ash text-gray-400 hover:border-gray-500 hover:text-white'
       }`}
     >
       {children}
     </Link>
+  );
+}
+
+function CountBadge({ active, children }: { active: boolean; children: React.ReactNode }) {
+  return (
+    <span className={`tabular-nums ${active ? 'text-ink/60' : 'text-gray-600'}`}>
+      {children}
+    </span>
   );
 }
