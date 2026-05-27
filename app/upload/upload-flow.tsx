@@ -813,6 +813,26 @@ function SuccessScreen({
         </p>
       </div>
 
+      {failedCount > 0 ? (
+        <div className="rounded-lg border border-red-900/60 bg-red-950/30 p-4 text-left">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-red-300">
+            {failedCount} failed
+          </p>
+          <ul className="space-y-1.5 text-xs text-red-200">
+            {files
+              .filter((f) => f.status === 'error')
+              .map((f) => (
+                <li key={f.id} className="break-words">
+                  <span className="text-red-100">{f.file.name}</span>
+                  <span className="ml-2 text-red-300/80">
+                    {f.error ?? 'Unknown error'}
+                  </span>
+                </li>
+              ))}
+          </ul>
+        </div>
+      ) : null}
+
       {showAccountPrompt ? (
         <div className="relative rounded-xl border border-ash bg-smoke p-4 text-left">
           <button
@@ -883,7 +903,11 @@ async function uploadOne(
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ eventId, sessionToken, filename: file.name }),
       });
-      if (!resp.ok) throw new Error((await resp.json()).error ?? 'video-url failed');
+      if (!resp.ok) {
+        const j = await resp.json().catch(() => ({}));
+        const msg = [j.error, j.detail].filter(Boolean).join(' — ') || `video-url ${resp.status}`;
+        throw new Error(msg);
+      }
       const json = await resp.json();
       mediaId = json.mediaId;
       uploadUrl = json.uploadUrl;
@@ -900,7 +924,11 @@ async function uploadOne(
           sessionToken,
         }),
       });
-      if (!resp.ok) throw new Error((await resp.json()).error ?? 'photo-url failed');
+      if (!resp.ok) {
+        const j = await resp.json().catch(() => ({}));
+        const msg = [j.error, j.detail].filter(Boolean).join(' — ') || `photo-url ${resp.status}`;
+        throw new Error(msg);
+      }
       const json = await resp.json();
       mediaId = json.mediaId;
       uploadUrl = json.uploadUrl;
