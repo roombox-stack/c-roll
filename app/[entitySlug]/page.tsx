@@ -195,8 +195,11 @@ export default async function EntityPage({
     .slice(0, 5);
   const maxSongCount = topSongs[0]?.[1] ?? 1;
 
-  // Events
-  const recentEvents = allEvents.slice(0, 4);
+  // Events — "Recent shows" = past shows only (most-recently-ended first).
+  // allEvents is already sorted by event_date desc, so filtering preserves order.
+  const todayISO = new Date().toISOString().slice(0, 10);
+  const pastEvents = allEvents.filter((ev) => ev.event_date <= todayISO);
+  const recentEvents = pastEvents.slice(0, 4);
 
   const ldType =
     entity.type === 'artist'
