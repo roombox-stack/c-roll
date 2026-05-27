@@ -7,6 +7,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Nav } from '@/components/nav';
+import { Footer } from '@/components/footer';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { BLUR_DATA_URL } from '@/lib/blur-placeholder';
 import { formatCount, formatEventDate, formatDuration } from '@/components/format';
@@ -492,13 +493,7 @@ export default async function HomePage() {
         ) : null}
       </main>
 
-      {/* ── Footer ───────────────────────────────────────────────────────── */}
-      <footer className="border-t border-white/5 bg-ink py-8">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 font-mono text-[10px] uppercase tracking-widest text-gray-600">
-          <span>c-roll © 2026 · the show, from everyone who was there.</span>
-          <span>v0.1</span>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
