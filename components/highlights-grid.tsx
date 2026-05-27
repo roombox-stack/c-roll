@@ -17,6 +17,13 @@ import type { SectionTag } from '@/lib/types';
 
 const PAGE = 24;
 
+function cleanLabel(s: string | null | undefined): string | null {
+  if (!s) return null;
+  const t = s.trim().toLowerCase();
+  if (!t || t.startsWith('untitled')) return null;
+  return s.trim();
+}
+
 export interface HighlightItem {
   id: string;
   file_type: 'photo' | 'video';
@@ -128,7 +135,9 @@ function HeroCard({ media }: { media: HighlightItem }) {
             </span>
           ) : null}
           <div className="absolute inset-x-0 bottom-0 space-y-1 p-4">
-            <div className="text-base font-semibold">{media.song_tag ?? media.caption ?? 'Untitled clip'}</div>
+            {(cleanLabel(media.song_tag) ?? cleanLabel(media.caption)) ? (
+              <div className="text-base font-semibold">{cleanLabel(media.song_tag) ?? cleanLabel(media.caption)}</div>
+            ) : null}
           </div>
         </div>
       </Link>
@@ -169,7 +178,9 @@ function SmallCard({ media }: { media: HighlightItem }) {
             </span>
           ) : null}
           <div className="absolute inset-x-0 bottom-0 p-2.5 text-xs">
-            <div className="truncate text-sm font-medium">{media.song_tag ?? media.caption ?? 'Untitled'}</div>
+            {(cleanLabel(media.song_tag) ?? cleanLabel(media.caption)) ? (
+              <div className="truncate text-sm font-medium">{cleanLabel(media.song_tag) ?? cleanLabel(media.caption)}</div>
+            ) : null}
           </div>
         </div>
       </Link>

@@ -500,7 +500,8 @@ function HeroThumb({ media }: { media: MediaRow | null }) {
   const thumb =
     media.thumbnail_url ?? (media.file_type === 'photo' ? media.storage_url : null);
   const isVideo = media.file_type === 'video';
-  const label = media.song_tag ?? media.caption ?? '';
+  const rawLabel = media.song_tag ?? media.caption ?? '';
+  const label = cleanLabel(rawLabel);
 
   return (
     <Link
@@ -510,7 +511,7 @@ function HeroThumb({ media }: { media: MediaRow | null }) {
       {thumb ? (
         <Image
           src={thumb}
-          alt={label}
+          alt={label ?? ''}
           fill
           sizes="160px"
           className="object-cover transition group-hover:scale-105"
@@ -756,6 +757,13 @@ function ArchiveList({ events, entitySlug }: { events: EventRow[]; entitySlug: s
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
+
+function cleanLabel(s: string | null | undefined): string | null {
+  if (!s) return null;
+  const t = s.trim().toLowerCase();
+  if (!t || t.startsWith('untitled')) return null;
+  return s.trim();
+}
 
 function filterHighlights(
   media: MediaRow[],
