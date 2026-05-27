@@ -294,7 +294,7 @@ export default async function HomePage() {
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-smoke via-ink to-black" />
         )}
-        <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/70 to-ink/30" />
+        <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/70 via-30% to-transparent to-50%" />
         <div className="absolute inset-0 bg-gradient-to-t from-ink via-transparent to-transparent" />
 
         <div className="relative mx-auto max-w-7xl px-4 pb-20 pt-16 lg:pb-28 lg:pt-24">
