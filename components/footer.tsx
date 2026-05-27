@@ -6,8 +6,8 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-4">
         <div className="flex flex-col items-start gap-6 md:flex-row md:items-center md:justify-between">
           <div>
-            <Link href="/" className="font-display text-lg font-black tracking-tight text-white hover:text-gray-300">
-              c<span className="text-croll">·</span>roll
+            <Link href="/" className="font-heading text-lg font-black tracking-tight text-white hover:text-gray-300">
+              c<span className="mx-[1px] text-croll">-</span>roll
             </Link>
             <p className="mt-1 text-xs">The show, from everyone who was there.</p>
           </div>

@@ -57,8 +57,8 @@ export async function Nav() {
     <header className="sticky top-0 z-40 border-b border-white/5 bg-ink/90 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-7xl items-center gap-4 px-4">
         {/* Wordmark */}
-        <Link href="/" className="shrink-0 font-display text-2xl font-black tracking-tight text-white">
-          c<span className="text-croll">·</span>roll
+        <Link href="/" className="shrink-0 font-heading text-2xl font-black tracking-tight text-white">
+          c<span className="mx-[1px] text-croll">-</span>roll
         </Link>
 
         {/* Center nav */}
