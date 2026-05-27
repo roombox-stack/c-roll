@@ -11,6 +11,7 @@
 import Link from 'next/link';
 import { deleteMedia, activateMedia } from './actions';
 import { HardDeleteButton } from './delete-button';
+import { SongTagEditor } from '@/components/admin/song-tag-editor';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 export const dynamic = 'force-dynamic';
@@ -40,7 +41,15 @@ interface MediaRow {
   created_at: string;
   uploader_id: string | null;
   upload_session: string | null;
-  event: { id: string; name: string; slug: string; entity: { name: string; slug: string } | null } | null;
+  event:
+    | {
+        id: string;
+        name: string;
+        slug: string;
+        setlist: string[] | null;
+        entity: { name: string; slug: string } | null;
+      }
+    | null;
 }
 
 export default async function AdminMediaPage({
@@ -57,7 +66,7 @@ export default async function AdminMediaPage({
   let query = supabase
     .from('media')
     .select(
-      'id, file_type, status, storage_url, thumbnail_url, mux_playback_id, duration_sec, song_tag, caption, view_count, like_count, created_at, uploader_id, upload_session, event:events(id, name, slug, entity:entities(name, slug))',
+      'id, file_type, status, storage_url, thumbnail_url, mux_playback_id, duration_sec, song_tag, caption, view_count, like_count, created_at, uploader_id, upload_session, event:events(id, name, slug, setlist, entity:entities(name, slug))',
       { count: 'exact' },
     )
     .order('created_at', { ascending: false })
@@ -181,9 +190,13 @@ export default async function AdminMediaPage({
                           {ev.name}
                         </Link>
                       )}
-                      {m.song_tag && (
-                        <span className="text-[10px] text-gray-500">{m.song_tag}</span>
-                      )}
+                      <div className="mt-1">
+                        <SongTagEditor
+                          mediaId={m.id}
+                          currentTag={m.song_tag}
+                          setlist={ev?.setlist ?? null}
+                        />
+                      </div>
                     </td>
 
                     {/* Type */}

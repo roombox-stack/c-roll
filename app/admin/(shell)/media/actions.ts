@@ -24,3 +24,54 @@ export async function hardDeleteMedia(id: string) {
   if (error) throw new Error(error.message);
   revalidatePath('/admin/media');
 }
+
+const MAX_SONG_TAG = 120;
+
+function normalizeSongTag(raw: unknown): string | null {
+  if (raw == null) return null;
+  if (typeof raw !== 'string') return null;
+  const t = raw.trim();
+  if (!t) return null;
+  return t.slice(0, MAX_SONG_TAG);
+}
+
+/** Set song_tag on a single media row. Pass null to clear. */
+export async function setSongTag(id: string, songTag: string | null) {
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from('media')
+    .update({ song_tag: normalizeSongTag(songTag) })
+    .eq('id', id);
+  if (error) throw new Error(error.message);
+  revalidatePath('/admin/media');
+  revalidatePath('/admin/moderation');
+}
+
+/**
+ * Apply song_tag to multiple media rows in one server action call. Used by
+ * the per-event "Tag Media" bulk editor. Caller passes only the rows that
+ * actually changed, so this stays cheap.
+ */
+export async function bulkSetSongTags(
+  updates: Array<{ id: string; song_tag: string | null }>,
+) {
+  if (updates.length === 0) return { updated: 0 };
+  const supabase = createAdminClient();
+
+  // PostgREST has no batch-update-with-different-values primitive, so we do
+  // one update per row. Volumes here are small (admin only, per-event).
+  let updated = 0;
+  for (const u of updates) {
+    const { error } = await supabase
+      .from('media')
+      .update({ song_tag: normalizeSongTag(u.song_tag) })
+      .eq('id', u.id);
+    if (error) throw new Error(error.message);
+    updated += 1;
+  }
+
+  revalidatePath('/admin/media');
+  revalidatePath('/admin/moderation');
+  revalidatePath('/admin/events', 'layout');
+  return { updated };
+}

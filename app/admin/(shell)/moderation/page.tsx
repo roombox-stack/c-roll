@@ -6,6 +6,7 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { SECTION_LABELS, type SectionTag } from '@/lib/types';
 import { approveMedia, removeMedia, bulkApproveAll } from './actions';
+import { SongTagEditor } from '@/components/admin/song-tag-editor';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,9 +24,10 @@ interface PendingMedia {
     | {
         name: string;
         slug: string;
+        setlist: string[] | null;
         entity: { name: string; slug: string } | { name: string; slug: string }[] | null;
       }
-    | { name: string; slug: string; entity: unknown }[]
+    | { name: string; slug: string; setlist: string[] | null; entity: unknown }[]
     | null;
 }
 
@@ -34,7 +36,7 @@ export default async function ModerationPage() {
   const { data } = await supabase
     .from('media')
     .select(
-      'id, file_type, storage_url, thumbnail_url, song_tag, section_tag, caption, created_at, upload_session, event:events(name, slug, entity:entities(name, slug))',
+      'id, file_type, storage_url, thumbnail_url, song_tag, section_tag, caption, created_at, upload_session, event:events(name, slug, setlist, entity:entities(name, slug))',
     )
     .eq('status', 'pending_review')
     .order('created_at', { ascending: true });
@@ -103,9 +105,13 @@ export default async function ModerationPage() {
                       — {ev.name}
                     </div>
                   )}
-                  {m.song_tag && (
-                    <div className="text-xs text-gray-400">Song: {m.song_tag}</div>
-                  )}
+                  <div className="pt-1">
+                    <SongTagEditor
+                      mediaId={m.id}
+                      currentTag={m.song_tag}
+                      setlist={ev?.setlist ?? null}
+                    />
+                  </div>
                   {m.section_tag && (
                     <div className="text-xs text-gray-400">
                       Section: {SECTION_LABELS[m.section_tag] ?? m.section_tag}

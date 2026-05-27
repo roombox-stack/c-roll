@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { Field, TextareaField, SubmitButton } from '@/components/admin/form-fields';
+import { BulkSongTagger, type TaggableMedia } from '@/components/admin/bulk-song-tagger';
 import { updateEvent } from '../actions';
 
 export const dynamic = 'force-dynamic';
@@ -37,6 +38,15 @@ export default async function EditEventPage({ params }: { params: { id: string }
   if (!data) notFound();
   const event = data as unknown as EventEditRow;
   const entity = Array.isArray(event.entity) ? event.entity[0] : event.entity;
+
+  // All media for this event — fed to the bulk song tagger below.
+  const { data: mediaRaw } = await supabase
+    .from('media')
+    .select('id, file_type, thumbnail_url, storage_url, song_tag, created_at')
+    .eq('event_id', event.id)
+    .neq('status', 'removed')
+    .order('created_at', { ascending: true });
+  const taggableMedia = (mediaRaw ?? []) as TaggableMedia[];
 
   const setlistText = Array.isArray(event.setlist) ? event.setlist.join('\n') : '';
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
@@ -131,6 +141,21 @@ export default async function EditEventPage({ params }: { params: { id: string }
           </div>
         </aside>
       </div>
+
+      {/* ── Tag Media ─────────────────────────────────────────────────── */}
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-lg font-semibold">Tag media</h2>
+          <p className="text-xs text-gray-500">
+            Assign a song from the setlist to each clip. Custom titles are allowed.
+            Changes don&rsquo;t save until you click &ldquo;Save all&rdquo;.
+          </p>
+        </div>
+        <BulkSongTagger
+          media={taggableMedia}
+          setlist={Array.isArray(event.setlist) ? event.setlist : []}
+        />
+      </section>
     </div>
   );
 }
