@@ -663,8 +663,6 @@ function MosaicTile({
       ) : (
         <div className="absolute inset-0 bg-gradient-to-br from-ash to-smoke" />
       )}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/10" />
-
       {/* Section badge top-left */}
       {media.section_tag ? (
         <span
