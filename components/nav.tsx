@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 
 const TOPIC_NAV: Array<{ href: string; label: string }> = [
-  { href: '/', label: 'Browse' },
+  { href: '/browse', label: 'Browse' },
   { href: '/?type=artist', label: 'Artists' },
   { href: '/?type=team', label: 'Sports' },
   { href: '/?type=event_brand', label: 'Events' },
