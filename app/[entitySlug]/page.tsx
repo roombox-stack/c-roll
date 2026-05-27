@@ -770,7 +770,11 @@ function ArchiveList({ events, entitySlug }: { events: EventRow[]; entitySlug: s
                       {ev.state ? `, ${ev.state}` : ''}
                     </span>
                   </span>
-                  <span className="ml-4 shrink-0 font-mono text-[10px] text-gray-600">
+                  <span
+                    className={`ml-4 shrink-0 font-mono text-[10px] ${
+                      ev.upload_count > 0 ? 'text-emerald-400' : 'text-gray-600'
+                    }`}
+                  >
                     {ev.upload_count}
                   </span>
                 </Link>
