@@ -327,10 +327,10 @@ export default async function HomePage() {
               Pick a show
             </Link>
             <Link
-              href="#how-it-works"
+              href="/about"
               className="inline-flex items-center rounded-md border border-white/20 bg-white/5 px-5 py-2.5 text-sm font-medium text-white backdrop-blur transition hover:bg-white/10"
             >
-              How c-roll works
+              What is c-roll
             </Link>
           </div>
 
