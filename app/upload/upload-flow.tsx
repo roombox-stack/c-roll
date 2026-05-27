@@ -485,8 +485,6 @@ function FilesStep({
 
   return (
     <section className="space-y-4">
-      <h2 className="text-xl font-semibold">Add photos &amp; videos</h2>
-
       {/* Hidden input — multiple lets the OS file picker do multi-select natively */}
       <input
         ref={inputRef}
@@ -498,34 +496,41 @@ function FilesStep({
       />
 
       {!hasFiles ? (
-        /* ── Empty state: full drop zone ── */
+        /* ── Empty state: drop zone matching design ── */
         <div
-          role="button"
-          tabIndex={0}
-          onClick={() => inputRef.current?.click()}
-          onKeyDown={(e) => e.key === 'Enter' && inputRef.current?.click()}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          className={`flex h-52 w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed transition ${
+          className={`relative rounded-xl border-2 border-dashed px-6 py-10 text-center transition ${
             dragging
               ? 'border-white bg-white/5'
-              : 'border-ash bg-smoke hover:border-gray-500 hover:bg-ash/50'
+              : 'border-ash/60 bg-smoke/40 hover:border-ash'
           }`}
         >
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400" aria-hidden>
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="17 8 12 3 7 8" />
-            <line x1="12" y1="3" x2="12" y2="15" />
-          </svg>
-          <div className="text-center">
-            <p className="font-semibold text-white">
-              {dragging ? 'Drop to add' : 'Select photos & videos'}
-            </p>
-            <p className="mt-1 text-xs text-gray-500">
-              Pick as many as you want at once &middot; up to 20 files, 500 MB
-            </p>
+          {/* Upload icon */}
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-croll">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
           </div>
+
+          <p className="text-base font-semibold text-white">
+            {dragging ? 'Drop to add files' : 'Drop your photos and videos here'}
+          </p>
+          <p className="mt-1 text-sm text-gray-500">
+            or tap to pick from your camera roll &mdash; up to {MAX_FILES} files
+          </p>
+
+          {/* Choose files button */}
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            className="mt-5 inline-flex items-center rounded-full bg-croll px-6 py-2 text-sm font-semibold text-ink transition hover:brightness-110"
+          >
+            Choose files
+          </button>
         </div>
       ) : (
         /* ── Files selected: thumbnail grid + drop zone overlay ── */
@@ -571,6 +576,12 @@ function FilesStep({
             ) : null}
           </p>
         </div>
+      )}
+
+      {!hasFiles && (
+        <p className="text-center text-[11px] text-gray-700">
+          photos up to 32 MB &middot; videos up to 500 MB &middot; uploads run in background
+        </p>
       )}
 
       {hasFiles ? (

@@ -23,10 +23,12 @@ import { Footer } from '@/components/footer';
 import { AttendanceButton } from '@/components/attendance-button';
 import { SECTION_LABELS, SECTION_ORDER, type SectionTag } from '@/lib/types';
 import { formatEventDate, formatCount } from '@/components/format';
+import { UploadFlow, type EventOption } from '@/app/upload/upload-flow';
 
 export const dynamic = 'force-dynamic';
 
 type Tab = 'watch' | 'browse' | 'upload';
+
 
 interface EventRow {
   id: string;
@@ -121,7 +123,11 @@ export default async function EventPage({
   if (!entity || entity.slug !== params.entitySlug) notFound();
 
   const tab: Tab =
-    searchParams.tab === 'browse' || searchParams.tab === 'upload' ? searchParams.tab : 'watch';
+    searchParams.tab === 'browse'
+      ? 'browse'
+      : searchParams.tab === 'upload'
+        ? 'upload'
+        : 'watch';
 
   const supabase = createAdminClient();
 
@@ -300,7 +306,7 @@ export default async function EventPage({
             >
               Browse
             </TabLink>
-            <TabLink href={`/upload/${event.slug}`} active={false} sub="add your clips">
+            <TabLink href={`${baseUrl}?tab=upload`} active={tab === 'upload'} sub="add your clips">
               Upload
             </TabLink>
           </div>
@@ -318,6 +324,9 @@ export default async function EventPage({
             activeSong={searchParams.song}
             totalUploads={event.upload_count}
           />
+        ) : null}
+        {tab === 'upload' ? (
+          <UploadTabContent event={event} entity={entity} />
         ) : null}
         {tab === 'browse' ? (
           <BrowseTabShell
@@ -340,7 +349,7 @@ export default async function EventPage({
         ) : null}
       </main>
 
-      <UploadButton eventSlug={event.slug} />
+      {tab !== 'upload' && <UploadButton eventSlug={event.slug} />}
 
       <script
         type="application/ld+json"
@@ -818,6 +827,53 @@ function SongClipThumb({ media }: { media: EventMedia }) {
             <span>@{media.uploader_id ? media.uploader_id.slice(0, 8) : 'anon'}</span>
             <span>{formatCount(media.view_count)} views</span>
           </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Upload tab ────────────────────────────────────────────────────────────────
+
+function UploadTabContent({
+  event,
+  entity,
+}: {
+  event: EventRow;
+  entity: { id: string; slug: string; name: string };
+}) {
+  const shortDate = new Date(event.event_date + 'T12:00:00').toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
+  const preselectedEvent: EventOption = {
+    id: event.id,
+    slug: event.slug,
+    name: event.name,
+    venue_name: event.venue_name,
+    city: event.city,
+    state: event.state,
+    event_date: event.event_date,
+    entity: { slug: entity.slug, name: entity.name },
+  };
+
+  return (
+    <div className="mx-auto max-w-xl">
+      <div className="overflow-hidden rounded-2xl border border-ash/50 bg-smoke/30">
+        {/* Card header */}
+        <div className="border-b border-ash/50 px-8 pt-8 pb-6">
+          <h2 className="text-xl font-semibold">Add your clips from this show</h2>
+          <p className="mt-1 text-sm text-gray-500">
+            {event.venue_name} &middot; {event.city}{event.state ? `, ${event.state}` : ''} &middot; {shortDate}.{' '}
+            <span className="text-gray-600">No account needed.</span>
+          </p>
+        </div>
+
+        {/* Upload flow embedded */}
+        <div className="px-8 py-6">
+          <UploadFlow initialEvent={preselectedEvent} />
         </div>
       </div>
     </div>
