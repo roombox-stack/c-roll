@@ -295,7 +295,7 @@ function EventStat({
   children?: React.ReactNode;
 }) {
   return (
-    <div className={`flex flex-col justify-between pr-8 ${attendance ? 'pl-8' : 'pr-8'} first:pl-0 last:pr-0`}>
+    <div className="flex flex-col justify-between px-6 first:pl-0 last:pr-0">
       <div>
         <div className="text-2xl font-semibold tabular-nums leading-none">
           {formatCount(value)}
