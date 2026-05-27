@@ -723,6 +723,20 @@ function ArchiveList({ events, entitySlug }: { events: EventRow[]; entitySlug: s
   }
   const years = Array.from(byYear.keys()).sort((a, b) => b - a);
 
+  // Within each year: most-recently-elapsed past show first, then upcoming
+  // shows by soonest. This puts shows the fan can actually watch at the top.
+  const todayISO = new Date().toISOString().slice(0, 10);
+  for (const [, bucket] of byYear) {
+    bucket.sort((a, b) => {
+      const aPast = a.event_date <= todayISO;
+      const bPast = b.event_date <= todayISO;
+      if (aPast && !bPast) return -1;
+      if (!aPast && bPast) return 1;
+      if (aPast && bPast) return a.event_date < b.event_date ? 1 : -1; // desc
+      return a.event_date < b.event_date ? -1 : 1; // upcoming: asc
+    });
+  }
+
   return (
     <div className="space-y-6">
       {years.map((year) => (
