@@ -22,8 +22,19 @@ export const MUX_WEBHOOK_SECRET = process.env.MUX_WEBHOOK_SECRET!;
  */
 export async function createDirectUpload() {
   const mux = getMux();
+  // Mux requires a CORS origin so the browser PUT preflight passes. Prefer
+  // NEXT_PUBLIC_APP_URL when configured; fall back to VERCEL_URL (auto-set
+  // on every Vercel deploy) and finally to '*'. '*' is acceptable for V1 —
+  // the upload URL is single-use and short-lived.
+  const explicit = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  const vercel = process.env.VERCEL_URL?.trim();
+  const corsOrigin = explicit
+    ? explicit
+    : vercel
+      ? `https://${vercel}`
+      : '*';
   const upload = await mux.video.uploads.create({
-    cors_origin: process.env.NEXT_PUBLIC_APP_URL!,
+    cors_origin: corsOrigin,
     new_asset_settings: {
       playback_policy: ['public'],
       // `mp4_support: 'standard'` would let us download an MP4. Skipping for V1.

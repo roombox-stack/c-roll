@@ -53,7 +53,12 @@ export async function POST(req: NextRequest) {
   try {
     mux = await createDirectUpload();
   } catch (e) {
-    return NextResponse.json({ error: 'failed to create mux upload' }, { status: 502 });
+    const detail = e instanceof Error ? e.message : 'unknown';
+    console.error('[video-url] mux createDirectUpload failed:', detail, e);
+    return NextResponse.json(
+      { error: 'failed to create mux upload', detail },
+      { status: 502 },
+    );
   }
 
   const { data: media, error: insertErr } = await supabase
