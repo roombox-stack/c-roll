@@ -297,7 +297,7 @@ export default async function EntityPage({
               {/* Genre + verified pills */}
               <div className="flex flex-wrap items-center gap-2">
                 {entity.verified ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-gray-300">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-500/50 bg-sky-500/15 px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-sky-300">
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
                       <path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2zm-1.2 14.6L6.6 12.4l1.4-1.4 2.8 2.8 5.6-5.6 1.4 1.4-7 7z" />
                     </svg>
