@@ -292,7 +292,7 @@ export default async function HomePage() {
     featuredContribCount = contribs.size;
   }
 
-  const heroBgImage = '/hero-home.png';
+  const heroBgImage = '/hero-home.jpg';
 
   return (
     <div className="min-h-screen bg-ink text-white">
