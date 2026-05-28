@@ -40,6 +40,16 @@ const HIGHLIGHTS: { value: Highlight; label: string }[] = [
   { value: 'recent', label: 'Most recent' },
 ];
 
+// Sports teams reuse the same filter VALUES (so filterHighlights logic is
+// unchanged) but with field-appropriate labels. "Acoustic" is dropped — its
+// filter keys off caption text that doesn't apply to games.
+const TEAM_HIGHLIGHTS: { value: Highlight; label: string }[] = [
+  { value: 'best', label: 'All time best' },
+  { value: 'crowd', label: 'Crowd energy' },
+  { value: 'stage', label: 'Field moments' },
+  { value: 'recent', label: 'Most recent' },
+];
+
 interface EntityRow {
   id: string;
   slug: string;
@@ -378,7 +388,7 @@ export default async function EntityPage({
 
           {/* Filter pills */}
           <div className="mt-5 flex flex-wrap gap-2">
-            {HIGHLIGHTS.map((h) => (
+            {(entity.type === 'team' ? TEAM_HIGHLIGHTS : HIGHLIGHTS).map((h) => (
               <FilterPill
                 key={h.value}
                 href={h.value === 'best' ? `/${entity.slug}` : `/${entity.slug}?filter=${h.value}`}
