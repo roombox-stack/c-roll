@@ -436,7 +436,7 @@ export default async function EntityPage({
           <section>
             <div className="flex items-end justify-between gap-4">
               <div>
-                <RedEyebrow>RECENT SHOWS</RedEyebrow>
+                <RedEyebrow>{entity.type === 'team' ? 'RECENT GAMES' : 'RECENT SHOWS'}</RedEyebrow>
                 <h2 className="mt-2 font-heading text-2xl font-bold text-white md:text-3xl">
                   Latest nights, freshest uploads.
                 </h2>
@@ -446,7 +446,7 @@ export default async function EntityPage({
                   href={`/${entity.slug}#archive`}
                   className="shrink-0 text-sm text-gray-500 transition hover:text-white"
                 >
-                  All {allEvents.length} Shows →
+                  All {allEvents.length} {entity.type === 'team' ? 'Games' : 'Shows'} →
                 </Link>
               ) : null}
             </div>
