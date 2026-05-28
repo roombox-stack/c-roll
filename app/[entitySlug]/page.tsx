@@ -438,7 +438,9 @@ export default async function EntityPage({
               <div>
                 <RedEyebrow>{entity.type === 'team' ? 'RECENT GAMES' : 'RECENT SHOWS'}</RedEyebrow>
                 <h2 className="mt-2 font-heading text-2xl font-bold text-white md:text-3xl">
-                  Latest nights, freshest uploads.
+                  {entity.type === 'team'
+                    ? 'Latest games, freshest clips.'
+                    : 'Latest nights, freshest uploads.'}
                 </h2>
               </div>
               {allEvents.length > 4 ? (
