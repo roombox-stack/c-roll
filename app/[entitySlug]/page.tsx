@@ -476,12 +476,21 @@ export default async function EntityPage({
             <div className="mt-4 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="font-heading text-3xl font-bold text-white md:text-4xl">
-                  All {allEvents.length} {allEvents.length === 1 ? 'show' : 'shows'} &middot;{' '}
-                  {formatCount(totalMedia)} clips
+                  All {allEvents.length}{' '}
+                  {entity.type === 'team'
+                    ? allEvents.length === 1
+                      ? 'game'
+                      : 'games'
+                    : allEvents.length === 1
+                      ? 'show'
+                      : 'shows'}{' '}
+                  &middot; {formatCount(totalMedia)} clips
                   {earliestYear ? ` · since ${earliestYear}` : ''}
                 </p>
                 <p className="mt-2 text-sm text-gray-500">
-                  Every show, every setlist, every upload — by date and venue.
+                  {entity.type === 'team'
+                    ? 'Every game, every play, every upload — by date and venue.'
+                    : 'Every show, every setlist, every upload — by date and venue.'}
                 </p>
               </div>
             </div>
