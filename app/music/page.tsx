@@ -28,7 +28,7 @@ export default async function MusicPage() {
 
       <section className="relative overflow-hidden border-b border-white/5 bg-ink">
         <Image
-          src="/hero-artists.jpg"
+          src="/hero-music.jpg"
           alt=""
           fill
           sizes="100vw"
