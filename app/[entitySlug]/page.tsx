@@ -370,7 +370,7 @@ export default async function EntityPage({
           <div className="flex min-w-max items-stretch divide-x divide-white/5">
             <StatChip label="CLIPS" value={formatCount(videoCount)} />
             <StatChip label="PHOTOS" value={formatCount(photoCount)} />
-            <StatChip label="SHOWS COVERED" value={String(allEvents.length)} />
+            <StatChip label={entity.type === 'team' ? 'GAMES COVERED' : 'SHOWS COVERED'} value={String(allEvents.length)} />
             <StatChip label="CONTRIBUTORS" value={formatCount(contribKeys.size)} />
             {earliestYear ? <StatChip label="SINCE" value={String(earliestYear)} /> : null}
           </div>
