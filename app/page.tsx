@@ -318,7 +318,7 @@ export default async function HomePage() {
 
         <div className="relative mx-auto max-w-7xl px-4 pb-20 pt-16 lg:pb-28 lg:pt-24">
           <p className="font-mono text-[10px] uppercase tracking-widest text-croll">
-            // C·ROLL · THE HOME-VIDEO ARCHIVE
+            // C·ROLL · THE CROWD-VIDEO ARCHIVE
           </p>
           <h1 className="mt-4 max-w-4xl font-display text-[clamp(2.5rem,7vw,5.5rem)] font-black leading-[0.95] tracking-tight text-white [text-shadow:0_2px_24px_rgba(0,0,0,0.7)]">
             Every event,
