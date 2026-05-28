@@ -752,50 +752,53 @@ function EventCard({
 }) {
   const gradient = EVENT_GRADIENTS[hashIndex(event.id, EVENT_GRADIENTS.length)];
   return (
-    <Link
-      href={href}
-      className={`group relative block aspect-[5/4] overflow-hidden rounded-lg bg-gradient-to-br ${gradient} transition hover:brightness-110`}
-    >
-      {heroThumbUrl ? (
-        <Image
-          src={heroThumbUrl}
-          alt=""
-          fill
-          sizes="(min-width: 1024px) 25vw, 50vw"
-          className="object-cover transition group-hover:scale-105"
-          unoptimized
-        />
-      ) : null}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-black/20" />
-
-      {/* LAST SHOW badge */}
-      {isLatest ? (
-        <span className="absolute left-2.5 top-2.5 rounded bg-croll px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-widest text-white">
-          Last Show
-        </span>
-      ) : null}
-
-      {/* Play button */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="rounded-full bg-white/15 p-3 backdrop-blur transition group-hover:bg-white/25 group-hover:scale-110">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="white" aria-hidden>
-            <path d="M8 5v14l11-7z" />
-          </svg>
+    <Link href={href} className="group block">
+      {/* Title block — pulled out above the image so a row of cards reads as a
+          clean, scannable column of dates + venues. */}
+      <div className="mb-2.5">
+        <div className="flex items-center gap-2">
+          <p className="font-mono text-[11px] font-semibold uppercase tracking-widest text-croll">
+            {formatEventDate(event.event_date)}
+          </p>
+          {isLatest ? (
+            <span className="rounded bg-croll/15 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-widest text-croll">
+              Last Show
+            </span>
+          ) : null}
         </div>
-      </div>
-
-      {/* Bottom info */}
-      <div className="absolute inset-x-0 bottom-0 space-y-0.5 p-3 text-white">
-        <p className="font-mono text-[9px] uppercase tracking-widest text-gray-400">
-          {formatEventDate(event.event_date)}
-        </p>
-        <p className="truncate text-sm font-semibold leading-tight">
+        <p className="mt-1 truncate font-heading text-base font-bold leading-tight text-white transition group-hover:text-croll md:text-lg">
           {event.venue_name}
           {event.city ? `, ${event.city}` : ''}
         </p>
-        <p className="font-mono text-[10px] text-gray-500">
+        <p className="mt-0.5 font-mono text-[11px] text-gray-500">
           {formatCount(event.upload_count)} uploads
         </p>
+      </div>
+
+      {/* Thumbnail */}
+      <div
+        className={`relative aspect-[5/4] overflow-hidden rounded-lg bg-gradient-to-br ${gradient} transition group-hover:brightness-110`}
+      >
+        {heroThumbUrl ? (
+          <Image
+            src={heroThumbUrl}
+            alt=""
+            fill
+            sizes="(min-width: 1024px) 25vw, 50vw"
+            className="object-cover transition group-hover:scale-105"
+            unoptimized
+          />
+        ) : null}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/10" />
+
+        {/* Play button */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="rounded-full bg-white/15 p-3 backdrop-blur transition group-hover:bg-white/25 group-hover:scale-110">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="white" aria-hidden>
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </div>
+        </div>
       </div>
     </Link>
   );
