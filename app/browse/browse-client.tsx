@@ -38,7 +38,7 @@ export interface BrowseEvent {
   entity: { slug: string; name: string } | null;
 }
 
-type TypeFilter = 'all' | 'artist' | 'team' | 'event_brand';
+export type TypeFilter = 'all' | 'artist' | 'team' | 'event_brand';
 type SortKey = 'clips' | 'followers' | 'recent' | 'az';
 type ViewMode = 'entities' | 'shows';
 
@@ -61,15 +61,17 @@ export function BrowseClient({
   events,
   isAuthed,
   followingSlugs,
+  lockedType,
 }: {
   entities: BrowseEntity[];
   events: BrowseEvent[];
   isAuthed: boolean;
   followingSlugs: string[];
+  lockedType?: Exclude<TypeFilter, 'all'>;
 }) {
   const followingSet = useMemo(() => new Set(followingSlugs), [followingSlugs]);
   const [view, setView] = useState<ViewMode>('entities');
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>(lockedType ?? 'all');
   const [sortKey, setSortKey] = useState<SortKey>('clips');
 
   // ── Entity filter + sort ────────────────────────────────────────────────
@@ -126,8 +128,12 @@ export function BrowseClient({
       {/* ── Sticky filter / sort bar ─────────────────────────────────────── */}
       <div className="sticky top-14 z-30 border-b border-white/5 bg-[#0d0d0d]/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:justify-between">
-          {/* Type pills */}
-          <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 md:overflow-visible">
+          {/* Type pills — hidden when filter is locked by the parent route */}
+          <div
+            className={`-mx-1 flex gap-1.5 overflow-x-auto px-1 md:overflow-visible ${
+              lockedType ? 'invisible' : ''
+            }`}
+          >
             {TYPE_PILLS.map((pill) => {
               const active = typeFilter === pill.value;
               return (

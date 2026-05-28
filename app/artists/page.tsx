@@ -1,22 +1,26 @@
-// /browse — Filterable, sortable index of everything on the platform.
+// /artists — Browse page pre-filtered to music artists only.
 
 import Image from 'next/image';
 import { Nav } from '@/components/nav';
 import { Footer } from '@/components/footer';
 import { formatCount } from '@/components/format';
 import { loadBrowseDataset } from '@/lib/browse-data';
-import { BrowseClient } from './browse-client';
+import { BrowseClient } from '@/app/browse/browse-client';
 
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: 'Browse · c·roll',
-  description: 'Every artist, team, event, and show on c·roll — filter and sort the full catalog.',
+  title: 'Artists · c·roll',
+  description: 'Every music artist on c·roll — filter and sort.',
 };
 
-export default async function BrowsePage() {
-  const { entities, events, totalClips, isAuthed, followingSlugs } =
-    await loadBrowseDataset();
+export default async function ArtistsPage() {
+  const { entities, events, isAuthed, followingSlugs } = await loadBrowseDataset();
+
+  const artistEntities = entities.filter((e) => e.type === 'artist');
+  const artistSlugs = new Set(artistEntities.map((e) => e.slug));
+  const artistEvents = events.filter((ev) => ev.entity && artistSlugs.has(ev.entity.slug));
+  const artistClips = artistEntities.reduce((sum, e) => sum + e.upload_count, 0);
 
   return (
     <div className="min-h-screen bg-ink text-white">
@@ -37,24 +41,25 @@ export default async function BrowsePage() {
 
         <div className="relative mx-auto max-w-7xl px-4 pb-10 pt-14 lg:pb-12 lg:pt-16">
           <p className="font-mono text-[10px] uppercase tracking-widest text-croll">
-            // C·ROLL CATALOG
+            // C·ROLL · ARTISTS
           </p>
           <h1 className="mt-3 font-display text-[clamp(2.25rem,5vw,4rem)] font-black leading-[0.95] tracking-tight text-white [text-shadow:0_2px_24px_rgba(0,0,0,0.7)]">
-            Browse.
+            Artists.
           </h1>
           <p className="mt-4 max-w-2xl text-base text-gray-400">
-            <span className="text-white">{formatCount(entities.length)}</span> artists, teams, and
-            events. <span className="text-white">{formatCount(events.length)}</span> shows
-            archived. <span className="text-white">{formatCount(totalClips)}</span> clips.
+            <span className="text-white">{formatCount(artistEntities.length)}</span> artists.{' '}
+            <span className="text-white">{formatCount(artistEvents.length)}</span> shows archived.{' '}
+            <span className="text-white">{formatCount(artistClips)}</span> clips.
           </p>
         </div>
       </section>
 
       <BrowseClient
-        entities={entities}
-        events={events}
+        entities={artistEntities}
+        events={artistEvents}
         isAuthed={isAuthed}
         followingSlugs={followingSlugs}
+        lockedType="artist"
       />
 
       <Footer />
