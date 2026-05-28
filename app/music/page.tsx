@@ -1,4 +1,4 @@
-// /artists — Browse page pre-filtered to music artists only.
+// /music — Browse page pre-filtered to music artists only.
 
 import Image from 'next/image';
 import { Nav } from '@/components/nav';
@@ -10,11 +10,11 @@ import { BrowseClient } from '@/app/browse/browse-client';
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: 'Artists · c·roll',
+  title: 'Music · c·roll',
   description: 'Every music artist on c·roll — filter and sort.',
 };
 
-export default async function ArtistsPage() {
+export default async function MusicPage() {
   const { entities, events, isAuthed, followingSlugs } = await loadBrowseDataset();
 
   const artistEntities = entities.filter((e) => e.type === 'artist');
@@ -41,10 +41,10 @@ export default async function ArtistsPage() {
 
         <div className="relative mx-auto max-w-7xl px-4 pb-10 pt-14 lg:pb-12 lg:pt-16">
           <p className="font-mono text-[10px] uppercase tracking-widest text-croll">
-            // C·ROLL · ARTISTS
+            // C·ROLL · MUSIC
           </p>
           <h1 className="mt-3 font-display text-[clamp(2.25rem,5vw,4rem)] font-black leading-[0.95] tracking-tight text-white [text-shadow:0_2px_24px_rgba(0,0,0,0.7)]">
-            Artists.
+            Music.
           </h1>
           <p className="mt-4 max-w-2xl text-base text-gray-400">
             <span className="text-white">{formatCount(artistEntities.length)}</span> artists.{' '}

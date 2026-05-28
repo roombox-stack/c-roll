@@ -1,5 +1,5 @@
 // Shared server-side data loader for /browse and its pre-filtered variants
-// (/artists, /sports). Returns everything BrowseClient needs.
+// (/music, /sports, /events). Returns everything BrowseClient needs.
 
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getCurrentUser } from '@/lib/auth';
