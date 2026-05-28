@@ -84,17 +84,17 @@ export function FollowButton({
   const baseClasses = (() => {
     if (variant === 'hero') {
       return following
-        ? 'border border-white/40 bg-white/15 text-white hover:bg-white/20'
+        ? 'border border-emerald-500/60 bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 hover:text-emerald-200'
         : 'border border-white/20 bg-white/5 text-white hover:bg-white/10';
     }
     if (variant === 'pill') {
       return following
-        ? 'border border-croll bg-croll text-ink'
+        ? 'border border-emerald-500/60 bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25'
         : 'border border-white/20 bg-white/5 text-white hover:bg-white/10';
     }
     // ghost
     return following
-      ? 'border border-white/30 text-white hover:bg-white/5'
+      ? 'border border-emerald-500/60 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20'
       : 'border border-white/15 text-gray-300 hover:border-white/30 hover:text-white';
   })();
 
@@ -109,7 +109,7 @@ export function FollowButton({
     >
       <span>{label}</span>
       {showCount && count > 0 ? (
-        <span className={following ? 'text-white/70' : 'text-gray-400'}>
+        <span className={following ? 'text-emerald-300/80' : 'text-gray-400'}>
           · {formatCount(count)}
         </span>
       ) : null}
