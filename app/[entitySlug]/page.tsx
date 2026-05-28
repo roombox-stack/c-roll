@@ -752,7 +752,10 @@ function EventCard({
 }) {
   const gradient = EVENT_GRADIENTS[hashIndex(event.id, EVENT_GRADIENTS.length)];
   return (
-    <Link href={href} className="group block">
+    <Link
+      href={href}
+      className="group block rounded-xl border border-white/10 bg-white/[0.02] p-3 transition hover:border-white/25 hover:bg-white/[0.04]"
+    >
       {/* Title block — pulled out above the image so a row of cards reads as a
           clean, scannable column of dates + venues. */}
       <div className="mb-2.5">
