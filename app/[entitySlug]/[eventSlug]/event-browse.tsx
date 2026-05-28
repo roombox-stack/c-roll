@@ -378,7 +378,7 @@ function SetlistList({
                 : 'border-l-2 border-transparent text-gray-300 hover:bg-white/[0.03] hover:text-white'
             }`}
           >
-            <span className="font-medium">All clips</span>
+            <span className="font-medium">Setlist</span>
             <span
               className={`font-mono text-[10px] tabular-nums ${
                 selectedSong === null ? 'text-croll' : 'text-gray-600'
@@ -501,7 +501,7 @@ function MobileSongPills({
           onClick={() => onSelectSong(null)}
           disabled={false}
         >
-          All clips
+          Setlist
         </PillButton>
         {setlist.map((song, i) => {
           const count = songCounts.get(song) ?? 0;
