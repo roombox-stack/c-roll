@@ -28,7 +28,7 @@ export default async function EventsPage() {
 
       <section className="relative overflow-hidden border-b border-white/5 bg-ink">
         <Image
-          src="/hero-browse.jpg"
+          src="/hero-events.jpg"
           alt=""
           fill
           sizes="100vw"
