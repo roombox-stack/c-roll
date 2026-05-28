@@ -9,7 +9,7 @@ const TOPIC_NAV: Array<{ href: string; label: string }> = [
   { href: '/browse', label: 'Browse' },
   { href: '/artists', label: 'Artists' },
   { href: '/sports', label: 'Sports' },
-  { href: '/?type=event_brand', label: 'Events' },
+  { href: '/events', label: 'Events' },
 ];
 
 interface SessionView {
