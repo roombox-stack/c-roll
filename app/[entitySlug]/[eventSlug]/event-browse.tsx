@@ -17,6 +17,7 @@ import { VideoPlayer } from '@/components/video-player';
 import { formatCount, formatDuration } from '@/components/format';
 import {
   SECTION_LABELS,
+  SECTION_BADGE_LABELS,
   SECTION_ORDER,
   type SectionTag,
 } from '@/lib/types';
@@ -674,10 +675,10 @@ function MosaicTile({
       {/* Section badge top-left */}
       {media.section_tag ? (
         <span
-          className="absolute left-2 top-2 rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-widest"
+          className="absolute left-2 top-2 rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold tracking-widest"
           style={{ backgroundColor: 'rgba(255,204,0,0.15)', color: '#FFCC00' }}
         >
-          {SECTION_LABELS[media.section_tag]}
+          {SECTION_BADGE_LABELS[media.section_tag]}
         </span>
       ) : null}
 
@@ -760,10 +761,10 @@ function ExpandedCard({
           <div className="flex flex-wrap items-center gap-1.5">
             {media.section_tag ? (
               <span
-                className="rounded px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-widest"
+                className="rounded px-2 py-0.5 font-mono text-[10px] font-semibold tracking-widest"
                 style={{ backgroundColor: 'rgba(255,204,0,0.15)', color: '#FFCC00' }}
               >
-                {SECTION_LABELS[media.section_tag]}
+                {SECTION_BADGE_LABELS[media.section_tag]}
               </span>
             ) : null}
             {song ? (

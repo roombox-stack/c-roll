@@ -4,7 +4,7 @@
 // masonry layout produces natural height variation.
 
 import Link from 'next/link';
-import { SECTION_LABELS, type SectionTag } from '@/lib/types';
+import { SECTION_BADGE_LABELS, type SectionTag } from '@/lib/types';
 import { formatCount } from './format';
 import type { MediaCardData } from './media-card';
 
@@ -29,8 +29,8 @@ export function MosaicCard({ media }: { media: MediaCardData }) {
   const dur = fmtDur(media.duration_sec);
 
   const sectionLabel =
-    media.section_tag && media.section_tag in SECTION_LABELS
-      ? SECTION_LABELS[media.section_tag as SectionTag]
+    media.section_tag && media.section_tag in SECTION_BADGE_LABELS
+      ? SECTION_BADGE_LABELS[media.section_tag as SectionTag]
       : null;
 
   const handle = media.uploader_id
@@ -69,7 +69,7 @@ export function MosaicCard({ media }: { media: MediaCardData }) {
         {/* Top row: section tag left, duration right */}
         <div className="absolute left-0 top-0 flex w-full items-start justify-between gap-1 p-2">
           {sectionLabel ? (
-            <span className="rounded bg-black/65 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-widest text-white/90 backdrop-blur-sm">
+            <span className="rounded bg-black/65 px-1.5 py-0.5 text-[9px] font-semibold tracking-widest text-white/90 backdrop-blur-sm">
               {sectionLabel}
             </span>
           ) : (

@@ -144,12 +144,12 @@ export default async function EntityPage({
     supabase
       .from('media')
       .select(
-        'id, file_type, storage_url, thumbnail_url, mux_playback_id, duration_sec, song_tag, caption, view_count, like_count, is_full_song',
+        'id, file_type, storage_url, thumbnail_url, mux_playback_id, duration_sec, song_tag, section_tag, caption, view_count, like_count, is_full_song',
       )
       .eq('entity_id', entity.id)
       .eq('status', 'active')
       .order('view_count', { ascending: false })
-      .limit(6),
+      .limit(30),
 
     supabase
       .from('media')
@@ -168,6 +168,9 @@ export default async function EntityPage({
   ]);
 
   const topMedia = (topMediaRes.data ?? []) as unknown as MediaRow[];
+  // Hero grid: prefer section variety (one clip per distinct section) before
+  // filling remaining slots by view count. topMedia is already view-desc.
+  const heroMedia = pickHeroGrid(topMedia, 6);
   const allMedia = (allMediaRes.data ?? []) as unknown as MediaRow[];
   const allEvents = (allEventsRes.data ?? []) as unknown as EventRow[];
 
@@ -341,7 +344,12 @@ export default async function EntityPage({
             </div>
 
             {/* Right column — 3×2 hero grid */}
-            <HeroGrid media={topMedia} entitySlug={entity.slug} />
+            <div>
+              <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.08em] text-white/35">
+                // FROM THE FLOOR TO THE UPPER DECK
+              </p>
+              <HeroGrid media={heroMedia} entitySlug={entity.slug} />
+            </div>
           </div>
         </div>
       </section>
@@ -505,6 +513,46 @@ function RedEyebrow({ children }: { children: React.ReactNode }) {
 
 // ── Hero grid (3 columns × 2 rows) ───────────────────────────────────────────
 
+// Section badge labels for the hero grid. Keyed by the media `section_tag`
+// enum. Pre-cased final display copy — rendered WITHOUT a CSS `uppercase`
+// transform so the trailing "s" in "100s"/"200s" stays lowercase.
+const HERO_SECTION_LABELS: Record<SectionTag, string> = {
+  floor: 'FLOOR / PIT',
+  pit: 'FLOOR / PIT',
+  section_100: 'SEC 100s',
+  section_200: 'SEC 200s',
+  upper: 'UPPER DECK',
+  stage_left: 'STAGE LEFT',
+  stage_right: 'STAGE RIGHT',
+  seated: 'SEATED',
+  vip: 'VIP',
+  outside: 'OUTSIDE',
+  concourse: 'CONCOURSE',
+};
+
+// Pick `n` hero-grid clips, preferring section variety: take one clip from each
+// distinct section (in view-count order) first, then fill the rest by view
+// count. `pool` is expected to already be sorted view-count descending.
+function pickHeroGrid(pool: MediaRow[], n: number): MediaRow[] {
+  const picked: MediaRow[] = [];
+  const seenSections = new Set<string>();
+  for (const m of pool) {
+    if (picked.length >= n) break;
+    if (m.section_tag && !seenSections.has(m.section_tag)) {
+      seenSections.add(m.section_tag);
+      picked.push(m);
+    }
+  }
+  if (picked.length < n) {
+    const pickedIds = new Set(picked.map((m) => m.id));
+    for (const m of pool) {
+      if (picked.length >= n) break;
+      if (!pickedIds.has(m.id)) picked.push(m);
+    }
+  }
+  return picked.slice(0, n);
+}
+
 function HeroGrid({ media, entitySlug: _entitySlug }: { media: MediaRow[]; entitySlug: string }) {
   const slots = Array.from({ length: 6 }, (_, i) => media[i] ?? null);
   return (
@@ -546,6 +594,16 @@ function HeroThumb({ media }: { media: MediaRow | null }) {
         <div className="absolute inset-0 bg-gradient-to-br from-ash to-smoke" />
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/10" />
+
+      {/* Section badge top-left — matches the event Browse tab style */}
+      {media.section_tag && HERO_SECTION_LABELS[media.section_tag] ? (
+        <span
+          className="absolute left-2 top-2 rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold tracking-widest"
+          style={{ backgroundColor: 'rgba(255,204,0,0.15)', color: '#FFCC00' }}
+        >
+          {HERO_SECTION_LABELS[media.section_tag]}
+        </span>
+      ) : null}
 
       {isVideo ? (
         <div className="absolute inset-0 flex items-center justify-center opacity-0 transition group-hover:opacity-100">

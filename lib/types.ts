@@ -116,6 +116,23 @@ export const SECTION_LABELS: Record<SectionTag, string> = {
   concourse: 'Concourse',
 };
 
+// Pre-cased labels for the yellow section badge shown on media thumbnails.
+// These are rendered WITHOUT a CSS `uppercase` transform so the trailing "s"
+// in "100s"/"200s" stays lowercase — apply them as-is, do not add `uppercase`.
+export const SECTION_BADGE_LABELS: Record<SectionTag, string> = {
+  floor: 'FLOOR / PIT',
+  section_100: 'SECTION 100s',
+  section_200: 'SECTION 200s',
+  upper: 'UPPER DECK',
+  stage_left: 'STAGE LEFT',
+  stage_right: 'STAGE RIGHT',
+  pit: 'PIT',
+  seated: 'SEATED',
+  vip: 'VIP',
+  outside: 'OUTSIDE',
+  concourse: 'CONCOURSE',
+};
+
 // All section values the API will accept (used to validate /api/upload/complete).
 export const SECTION_ORDER: SectionTag[] = [
   'floor',
