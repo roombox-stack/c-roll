@@ -1,4 +1,4 @@
-# Showside — Claude Code project instructions
+# C-Roll — Claude Code project instructions
 
 Standing rules for Claude Code when working in this repo. Keep this short and
 load-bearing — only things Claude needs to remember across sessions.
