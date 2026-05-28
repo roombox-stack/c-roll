@@ -28,7 +28,7 @@ export default async function ArtistsPage() {
 
       <section className="relative overflow-hidden border-b border-white/5 bg-ink">
         <Image
-          src="/hero-browse.jpg"
+          src="https://pub-c534acff53e24dc7a23b38214d86f35a.r2.dev/media/449219aa-404f-4a15-9622-ca2b95002b44/cody-board-C7DWZcxFCNY-unsplash.jpg"
           alt=""
           fill
           sizes="100vw"
