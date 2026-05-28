@@ -610,7 +610,12 @@ function CalendarBucket({
             <li key={ev.id}>
               <Link
                 href={href}
-                className="grid grid-cols-1 items-center gap-2 rounded-md px-2 py-1.5 transition hover:bg-white/5 md:grid-cols-[1fr_1fr_auto] md:gap-6"
+                // Fixed-width right column keeps the venue text in the same
+                // x-position whether the stats string is long ("10 clips · 1
+                // contributor · 14 mins ago") or short ("0 clips"). Without
+                // this, each Link is its own grid, so an auto column shrinks
+                // when stats are short and shoves the venue rightward.
+                className="grid grid-cols-1 items-center gap-2 rounded-md px-2 py-1.5 transition hover:bg-white/5 md:grid-cols-[1fr_1.4fr_320px] md:gap-6"
               >
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-semibold text-white">
@@ -622,11 +627,11 @@ function CalendarBucket({
                   {ev.city ? ` · ${ev.city}` : ''}
                 </span>
                 {variant === 'upcoming' ? (
-                  <span className="shrink-0 font-mono text-[10px] uppercase tracking-widest text-gray-600">
+                  <span className="shrink-0 text-right font-mono text-[10px] uppercase tracking-widest text-gray-600">
                     clips arrive during and after the show
                   </span>
                 ) : stats ? (
-                  <span className="shrink-0 font-mono text-[10px] uppercase tracking-widest text-gray-500">
+                  <span className="shrink-0 text-right font-mono text-[10px] uppercase tracking-widest text-gray-500">
                     <span className="text-croll">
                       {formatCount(stats.clipCount)} clips
                     </span>
@@ -640,7 +645,7 @@ function CalendarBucket({
                     ) : null}
                   </span>
                 ) : (
-                  <span className="shrink-0 font-mono text-[10px] uppercase tracking-widest text-gray-600">
+                  <span className="shrink-0 text-right font-mono text-[10px] uppercase tracking-widest text-gray-600">
                     {formatCount(ev.upload_count)} clips
                   </span>
                 )}
