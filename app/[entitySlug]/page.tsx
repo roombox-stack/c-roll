@@ -409,10 +409,11 @@ export default async function EntityPage({
         {/* ── Most filmed songs ───────────────────────────────────────── */}
         {topSongs.length > 0 ? (
           <section>
-            <RedEyebrow>MOST FILMED SONGS</RedEyebrow>
+            <RedEyebrow>{entity.type === 'team' ? 'MOST FILMED MOMENTS' : 'MOST FILMED SONGS'}</RedEyebrow>
             <h2 className="mt-2 font-heading text-2xl font-bold text-white md:text-3xl">
-              The ones that broke phones across {allEvents.length}{' '}
-              {allEvents.length === 1 ? 'show' : 'shows'}.
+              {entity.type === 'team'
+                ? `The plays that broke phones across ${allEvents.length} ${allEvents.length === 1 ? 'game' : 'games'}.`
+                : `The ones that broke phones across ${allEvents.length} ${allEvents.length === 1 ? 'show' : 'shows'}.`}
             </h2>
 
             <div className="mt-6 grid grid-cols-1 gap-px bg-white/5 md:grid-cols-5">
