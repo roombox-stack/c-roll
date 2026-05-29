@@ -15,11 +15,13 @@ export function VideoPlayer({
   autoPlay = false,
   muted = false,
   poster,
+  fullscreen = false,
 }: {
   playbackId: string;
   autoPlay?: boolean;
   muted?: boolean;
   poster?: string;
+  fullscreen?: boolean;
 }) {
   return (
     <MuxPlayer
@@ -29,11 +31,19 @@ export function VideoPlayer({
       streamType="on-demand"
       poster={poster}
       accentColor="#ffffff"
-      style={{
-        aspectRatio: '16 / 9',
-        width: '100%',
-        backgroundColor: '#0a0a0b',
-      }}
+      style={
+        fullscreen
+          ? {
+              width: '100%',
+              height: '100%',
+              backgroundColor: '#000',
+            }
+          : {
+              aspectRatio: '16 / 9',
+              width: '100%',
+              backgroundColor: '#0a0a0b',
+            }
+      }
     />
   );
 }

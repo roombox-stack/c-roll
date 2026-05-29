@@ -728,13 +728,14 @@ function VideoFullscreenOverlay({
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
-      {/* Video fills the screen */}
-      <div className="flex flex-1 items-center justify-center overflow-hidden">
+      {/* Video fills the full viewport height */}
+      <div className="absolute inset-0">
         {media.mux_playback_id ? (
           <VideoPlayer
             playbackId={media.mux_playback_id}
             autoPlay
             poster={media.thumbnail_url ?? undefined}
+            fullscreen
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-sm text-gray-500">
