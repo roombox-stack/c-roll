@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { Field, TextareaField, SubmitButton } from '@/components/admin/form-fields';
+import { DateField } from '@/components/admin/date-field';
 import { BulkSongTagger, type TaggableMedia } from '@/components/admin/bulk-song-tagger';
 import { updateEvent } from '../actions';
 import { SavedToast } from '@/components/admin/saved-toast';
@@ -85,10 +86,9 @@ export default async function EditEventPage({
               defaultValue={event.venue_name}
               required
             />
-            <Field
+            <DateField
               label="Event date"
               name="event_date"
-              type="date"
               defaultValue={event.event_date}
               required
             />

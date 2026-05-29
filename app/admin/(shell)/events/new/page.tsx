@@ -8,6 +8,7 @@ import {
   SelectField,
   SubmitButton,
 } from '@/components/admin/form-fields';
+import { DateField } from '@/components/admin/date-field';
 import { createEvent } from '../actions';
 
 export const dynamic = 'force-dynamic';
@@ -41,7 +42,7 @@ export default async function NewEventPage() {
         <Field label="Slug" name="slug" placeholder="auto-generated" />
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <Field label="Venue name" name="venue_name" required />
-          <Field label="Event date" name="event_date" type="date" required />
+          <DateField label="Event date" name="event_date" required />
         </div>
         <div className="grid grid-cols-3 gap-4">
           <Field label="City" name="city" required />
