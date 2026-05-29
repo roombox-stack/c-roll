@@ -72,6 +72,7 @@ export async function updateEntity(id: string, formData: FormData) {
   const bio = getField(formData, 'bio');
   const verified = formData.get('verified') === 'on';
   const claimed = formData.get('claimed') === 'on';
+  const hidden = formData.get('hidden') === 'on';
 
   if (!name) throw new Error('name is required');
   if (!slug) throw new Error('slug is required');
@@ -88,6 +89,7 @@ export async function updateEntity(id: string, formData: FormData) {
       bio: bio || null,
       verified,
       claimed,
+      hidden,
     })
     .eq('id', id);
 
@@ -97,4 +99,30 @@ export async function updateEntity(id: string, formData: FormData) {
   revalidatePath(`/admin/entities/${id}`);
   // Redirect back with a changing token so the page shows a "saved" toast.
   redirect(`/admin/entities/${id}?saved=${Date.now()}`);
+}
+
+export async function hideEntity(id: string) {
+  const supabase = createAdminClient();
+  const { error } = await supabase.from('entities').update({ hidden: true }).eq('id', id);
+  if (error) throw new Error(error.message);
+  revalidatePath('/admin/entities');
+  revalidatePath(`/admin/entities/${id}`);
+  redirect(`/admin/entities/${id}?saved=${Date.now()}`);
+}
+
+export async function unhideEntity(id: string) {
+  const supabase = createAdminClient();
+  const { error } = await supabase.from('entities').update({ hidden: false }).eq('id', id);
+  if (error) throw new Error(error.message);
+  revalidatePath('/admin/entities');
+  revalidatePath(`/admin/entities/${id}`);
+  redirect(`/admin/entities/${id}?saved=${Date.now()}`);
+}
+
+export async function deleteEntity(id: string) {
+  const supabase = createAdminClient();
+  const { error } = await supabase.from('entities').delete().eq('id', id);
+  if (error) throw new Error(error.message);
+  revalidatePath('/admin/entities');
+  redirect('/admin/entities');
 }

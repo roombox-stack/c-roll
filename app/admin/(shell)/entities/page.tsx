@@ -10,7 +10,7 @@ export default async function EntitiesListPage() {
   const supabase = createAdminClient();
   const { data: entities } = await supabase
     .from('entities')
-    .select('id, slug, name, type, genre, verified, claimed, follower_count')
+    .select('id, slug, name, type, genre, verified, claimed, hidden, follower_count')
     .order('name');
 
   const rows = entities ?? [];
@@ -43,7 +43,7 @@ export default async function EntitiesListPage() {
             </thead>
             <tbody>
               {rows.map((e) => (
-                <tr key={e.id} className="border-t border-ash hover:bg-ash/30">
+                <tr key={e.id} className={`border-t border-ash hover:bg-ash/30 ${e.hidden ? 'opacity-50' : ''}`}>
                   <td className="px-4 py-2">
                     <Link href={`/admin/entities/${e.id}`} className="block hover:underline">
                       {e.name}
@@ -61,8 +61,13 @@ export default async function EntitiesListPage() {
                       </span>
                     )}
                     {e.claimed && (
-                      <span className="rounded bg-green-900/40 px-2 py-0.5 text-xs text-green-300">
+                      <span className="mr-1 rounded bg-green-900/40 px-2 py-0.5 text-xs text-green-300">
                         claimed
+                      </span>
+                    )}
+                    {e.hidden && (
+                      <span className="rounded bg-red-900/40 px-2 py-0.5 text-xs text-red-400">
+                        hidden
                       </span>
                     )}
                   </td>

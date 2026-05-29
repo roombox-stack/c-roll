@@ -101,6 +101,7 @@ async function fetchEntity(slug: string): Promise<EntityRow | null> {
     .from('entities')
     .select('id, slug, name, type, genre, bio, verified, claimed, hero_image_url, follower_count')
     .eq('slug', slug)
+    .eq('hidden', false)
     .maybeSingle();
   return (data as EntityRow) ?? null;
 }
