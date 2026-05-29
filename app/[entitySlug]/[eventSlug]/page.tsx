@@ -200,8 +200,8 @@ export default async function EventPage({
               </div>
             </div>
 
-            {/* Stats row — sits top-right on lg+, wraps below title on mobile */}
-            <div className="flex items-stretch divide-x divide-white/10 lg:justify-end">
+            {/* Stats row — desktop: top-right with button inside Attendance col */}
+            <div className="hidden items-stretch divide-x divide-white/10 md:flex lg:justify-end">
               <EventStat label="Clips" value={event.upload_count} />
               <EventStat label="Contributors" value={contribKeys.size} />
               <EventStat label="Attendance" value={attendeeCount ?? 0} attendance>
@@ -213,6 +213,32 @@ export default async function EventPage({
                   isAuthed={!!currentUser}
                 />
               </EventStat>
+            </div>
+
+            {/* Stats + attendance — mobile: two-row layout */}
+            <div className="space-y-3 md:hidden">
+              {/* Row 1: three stats strip */}
+              <div className="grid grid-cols-3 divide-x divide-white/10">
+                {[
+                  { label: 'Clips', value: event.upload_count },
+                  { label: 'Contributors', value: contribKeys.size },
+                  { label: 'Attendance', value: attendeeCount ?? 0 },
+                ].map(({ label, value }) => (
+                  <div key={label} className="flex flex-col items-center py-2 first:items-start last:items-end">
+                    <span className="text-[20px] font-medium tabular-nums leading-none">{formatCount(value)}</span>
+                    <span className="mt-1 text-[10px] font-semibold uppercase tracking-widest text-gray-500">{label}</span>
+                  </div>
+                ))}
+              </div>
+              {/* Row 2: full-width attendance action */}
+              <AttendanceButton
+                eventId={event.id}
+                eventUrl={baseUrl}
+                initiallyAttending={initiallyAttending}
+                initialCount={attendeeCount ?? 0}
+                isAuthed={!!currentUser}
+                fullWidth
+              />
             </div>
           </div>
 

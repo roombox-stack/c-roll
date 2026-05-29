@@ -15,12 +15,14 @@ export function AttendanceButton({
   initiallyAttending,
   initialCount,
   isAuthed,
+  fullWidth = false,
 }: {
   eventId: string;
   eventUrl: string;
   initiallyAttending: boolean;
   initialCount: number;
   isAuthed: boolean;
+  fullWidth?: boolean;
 }) {
   const router = useRouter();
   const [attending, setAttending] = useState(initiallyAttending);
@@ -44,6 +46,44 @@ export function AttendanceButton({
       setAttending(json.attending);
       setCount(json.count);
     });
+  }
+
+  if (fullWidth) {
+    return (
+      <div className="space-y-2">
+        <button
+          type="button"
+          onClick={onClick}
+          disabled={pending}
+          className={`flex h-12 w-full items-center justify-center gap-2 rounded-xl border text-sm font-medium transition disabled:opacity-60 ${
+            attending
+              ? 'border-emerald-700/60 bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/20'
+              : 'border-white/20 bg-transparent text-white hover:bg-white/5'
+          }`}
+          aria-pressed={attending}
+        >
+          {attending ? (
+            <>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M20 6 9 17l-5-5" />
+              </svg>
+              I was there
+            </>
+          ) : (
+            <>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+              I was there
+            </>
+          )}
+        </button>
+        <p className="text-center text-xs text-gray-500">
+          {formatCount(count)} {count === 1 ? 'fan was' : 'fans were'} here
+        </p>
+      </div>
+    );
   }
 
   return (
