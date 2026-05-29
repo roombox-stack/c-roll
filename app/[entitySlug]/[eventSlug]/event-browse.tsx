@@ -227,24 +227,46 @@ export function EventBrowse({
       </aside>
 
       {/* ── Left rail (mobile — horizontal scroll) ──────────────────────── */}
-      <div className="-mx-4 space-y-3 border-b border-white/5 px-4 pb-4 md:hidden">
-        <MobileSongPills
-          setlist={cleanSetlist}
-          songCounts={songCounts}
-          selectedSong={selectedSong}
-          onSelectSong={selectSong}
-        />
-        <MobileSectionPills
-          sectionCounts={sectionCounts}
-          selectedSections={selectedSections}
-          onToggle={toggleSection}
-        />
+      <div className="-mx-4 space-y-2 border-b border-white/5 px-4 pb-3 md:hidden">
+        {/* Row 1: song pills + type pills */}
+        <div className="flex items-center gap-2 overflow-x-auto">
+          <MobileSongPills
+            setlist={cleanSetlist}
+            songCounts={songCounts}
+            selectedSong={selectedSong}
+            onSelectSong={selectSong}
+          />
+          <div className="flex shrink-0 gap-1">
+            <TypePill active={typeFilter === 'all'} count={typeCounts.all} onClick={() => setTypeFilter('all')}>All</TypePill>
+            <TypePill active={typeFilter === 'video'} count={typeCounts.video} disabled={typeCounts.video === 0} onClick={() => setTypeFilter('video')}>Vid</TypePill>
+            <TypePill active={typeFilter === 'photo'} count={typeCounts.photo} disabled={typeCounts.photo === 0} onClick={() => setTypeFilter('photo')}>Pic</TypePill>
+          </div>
+        </div>
+        {/* Row 2: section pills + sort dropdown */}
+        <div className="flex items-center gap-2">
+          <div className="flex flex-1 gap-1.5 overflow-x-auto">
+            <MobileSectionPills
+              sectionCounts={sectionCounts}
+              selectedSections={selectedSections}
+              onToggle={toggleSection}
+            />
+          </div>
+          <select
+            value={sortKey}
+            onChange={(e) => setSortKey(e.target.value as SortKey)}
+            className="shrink-0 rounded border border-white/10 bg-white/5 px-2 py-1 text-[10px] text-white outline-none"
+          >
+            {SORT_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value} className="bg-ink text-white">{o.label}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* ── Right zone — mosaic ─────────────────────────────────────────── */}
       <section className="min-w-0 flex-1 md:pl-6">
-        {/* Active-filter summary (count chip reflects ALL three filters) */}
-        <p className="mb-3 text-xs text-gray-500">
+        {/* Active-filter summary — desktop only */}
+        <p className="mb-3 hidden text-xs text-gray-500 md:block">
           <span className="text-gray-300">{formatCount(filtered.length)}</span> clip
           {filtered.length === 1 ? '' : 's'}
           {selectedSong ? (
@@ -273,8 +295,8 @@ export function EventBrowse({
           ) : null}
         </p>
 
-        {/* Type pills (left) + sort dropdown (right) */}
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        {/* Type pills + sort dropdown — desktop only (mobile has them in the rail) */}
+        <div className="mb-4 hidden flex-wrap items-center justify-between gap-3 md:flex">
           <div className="flex flex-wrap gap-1.5">
             <TypePill
               active={typeFilter === 'all'}
@@ -321,29 +343,54 @@ export function EventBrowse({
               : 'No clips match the current filters.'}
           </p>
         ) : (
-          <div
-            className="grid gap-3"
-            style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}
-          >
-            {filtered.map((m) => {
-              if (m.id === expandedId && expandedMedia) {
+          <>
+            {/* Mobile: 3-column flush square grid */}
+            <div className="grid grid-cols-3 md:hidden">
+              {filtered.map((m) => {
+                if (m.id === expandedId && expandedMedia) {
+                  return (
+                    <ExpandedCard
+                      key={m.id}
+                      media={expandedMedia}
+                      onClose={() => setExpandedId(null)}
+                      mobile
+                    />
+                  );
+                }
                 return (
-                  <ExpandedCard
+                  <MobileTile
                     key={m.id}
-                    media={expandedMedia}
-                    onClose={() => setExpandedId(null)}
+                    media={m}
+                    onClick={() => setExpandedId(m.id)}
                   />
                 );
-              }
-              return (
-                <MosaicTile
-                  key={m.id}
-                  media={m}
-                  onClick={() => setExpandedId(m.id)}
-                />
-              );
-            })}
-          </div>
+              })}
+            </div>
+            {/* Desktop: existing mosaic */}
+            <div
+              className="hidden md:grid md:gap-3"
+              style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}
+            >
+              {filtered.map((m) => {
+                if (m.id === expandedId && expandedMedia) {
+                  return (
+                    <ExpandedCard
+                      key={m.id}
+                      media={expandedMedia}
+                      onClose={() => setExpandedId(null)}
+                    />
+                  );
+                }
+                return (
+                  <MosaicTile
+                    key={m.id}
+                    media={m}
+                    onClick={() => setExpandedId(m.id)}
+                  />
+                );
+              })}
+            </div>
+          </>
         )}
       </section>
     </div>
@@ -492,43 +539,28 @@ function MobileSongPills({
   onSelectSong: (song: string | null) => void;
 }) {
   return (
-    <div>
-      <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-croll">
-        // STEP THROUGH THE SHOW
-      </p>
-      <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1">
-        <PillButton
-          active={selectedSong === null}
-          onClick={() => onSelectSong(null)}
-          disabled={false}
-        >
-          Setlist
-        </PillButton>
-        {setlist.map((song, i) => {
-          const count = songCounts.get(song) ?? 0;
-          const disabled = count === 0;
-          return (
-            <PillButton
-              key={song + i}
-              active={selectedSong === song}
-              onClick={() => !disabled && onSelectSong(song)}
-              disabled={disabled}
-            >
-              <span className="mr-1.5 font-mono text-[10px] text-gray-500">
-                {String(i + 1).padStart(2, '0')}
-              </span>
-              {song}
-              <span
-                className={`ml-1.5 font-mono text-[10px] tabular-nums ${
-                  count > 0 ? 'text-emerald-400' : 'text-gray-500'
-                }`}
-              >
-                {count}
-              </span>
-            </PillButton>
-          );
-        })}
-      </div>
+    <div className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto">
+      <PillButton
+        active={selectedSong === null}
+        onClick={() => onSelectSong(null)}
+        disabled={false}
+      >
+        All
+      </PillButton>
+      {setlist.map((song, i) => {
+        const count = songCounts.get(song) ?? 0;
+        const disabled = count === 0;
+        return (
+          <PillButton
+            key={song + i}
+            active={selectedSong === song}
+            onClick={() => !disabled && onSelectSong(song)}
+            disabled={disabled}
+          >
+            {song}
+          </PillButton>
+        );
+      })}
     </div>
   );
 }
@@ -543,29 +575,23 @@ function MobileSectionPills({
   onToggle: (s: SectionTag) => void;
 }) {
   return (
-    <div>
-      <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-croll">
-        // FILTER BY SECTION
-      </p>
-      <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1">
-        {SECTION_FILTERS.map((s) => {
-          const count = sectionCounts.get(s) ?? 0;
-          const disabled = count === 0;
-          return (
-            <PillButton
-              key={s}
-              active={selectedSections.has(s)}
-              onClick={() => onToggle(s)}
-              disabled={disabled}
-              mono
-            >
-              {SECTION_LABELS[s]}
-              <span className="ml-1 font-mono text-[10px] tabular-nums">{count}</span>
-            </PillButton>
-          );
-        })}
-      </div>
-    </div>
+    <>
+      {SECTION_FILTERS.map((s) => {
+        const count = sectionCounts.get(s) ?? 0;
+        const disabled = count === 0;
+        return (
+          <PillButton
+            key={s}
+            active={selectedSections.has(s)}
+            onClick={() => onToggle(s)}
+            disabled={disabled}
+            mono
+          >
+            {SECTION_LABELS[s]}
+          </PillButton>
+        );
+      })}
+    </>
   );
 }
 
@@ -587,7 +613,7 @@ function PillButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`shrink-0 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs transition ${
+      className={`shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs transition ${
         mono ? 'font-mono uppercase tracking-widest' : ''
       } ${
         active
@@ -634,6 +660,57 @@ function TypePill({
       <span className={`ml-1.5 tabular-nums ${active ? 'text-ink/70' : ''}`}>
         · {count}
       </span>
+    </button>
+  );
+}
+
+// ── Mobile tile (3-column flush square grid) ─────────────────────────────────
+
+function MobileTile({
+  media,
+  onClick,
+}: {
+  media: EventBrowseMedia;
+  onClick: () => void;
+}) {
+  const isVideo = media.file_type === 'video';
+  const thumb = media.thumbnail_url ?? (isVideo ? null : media.storage_url);
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group relative block aspect-square w-full overflow-hidden bg-smoke"
+    >
+      {thumb ? (
+        <Image
+          src={thumb}
+          alt=""
+          fill
+          sizes="33vw"
+          className="object-cover"
+          placeholder="blur"
+          blurDataURL={BLUR_DATA_URL}
+          unoptimized
+        />
+      ) : (
+        <div className="absolute inset-0 bg-gradient-to-br from-ash to-smoke" />
+      )}
+
+      {/* View count — bottom-left */}
+      <span className="absolute bottom-1 left-1 flex items-center gap-0.5 rounded bg-black/70 px-1 py-0.5 font-mono text-[10px] tabular-nums text-white">
+        <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+          <path d="M8 5v14l11-7z" />
+        </svg>
+        {formatCount(media.view_count)}
+      </span>
+
+      {/* Duration — bottom-right (videos only) */}
+      {isVideo && media.duration_sec ? (
+        <span className="absolute bottom-1 right-1 rounded bg-black/70 px-1 py-0.5 font-mono text-[10px] tabular-nums text-white">
+          {formatDuration(media.duration_sec)}
+        </span>
+      ) : null}
     </button>
   );
 }
@@ -714,16 +791,18 @@ function MosaicTile({
 function ExpandedCard({
   media,
   onClose,
+  mobile = false,
 }: {
   media: EventBrowseMedia;
   onClose: () => void;
+  mobile?: boolean;
 }) {
   const isVideo = media.file_type === 'video';
   const song = cleanLabel(media.song_tag);
   const caption = cleanLabel(media.caption);
   return (
     <div
-      className="relative overflow-hidden rounded-lg border bg-[#141414]"
+      className="relative overflow-hidden border bg-[#141414] md:rounded-lg"
       style={{ gridColumn: '1 / -1', borderColor: 'rgba(255,255,255,0.1)' }}
     >
       <button
