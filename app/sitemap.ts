@@ -25,6 +25,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/privacy`, changeFrequency: 'monthly', priority: 0.2 },
     { url: `${base}/terms`, changeFrequency: 'monthly', priority: 0.2 },
     { url: `${base}/dmca`, changeFrequency: 'monthly', priority: 0.2 },
+    { url: `${base}/claim`, changeFrequency: 'monthly', priority: 0.5 },
   ];
 
   for (const e of entitiesRes.data ?? []) {

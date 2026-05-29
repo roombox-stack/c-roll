@@ -58,6 +58,7 @@ interface EntityRow {
   genre: string | null;
   bio: string | null;
   verified: boolean;
+  claimed: boolean | null;
   hero_image_url: string | null;
   follower_count: number;
 }
@@ -98,7 +99,7 @@ async function fetchEntity(slug: string): Promise<EntityRow | null> {
   const supabase = createAdminClient();
   const { data } = await supabase
     .from('entities')
-    .select('id, slug, name, type, genre, bio, verified, hero_image_url, follower_count')
+    .select('id, slug, name, type, genre, bio, verified, claimed, hero_image_url, follower_count')
     .eq('slug', slug)
     .maybeSingle();
   return (data as EntityRow) ?? null;
@@ -351,6 +352,23 @@ export default async function EntityPage({
                   className="px-5 py-2.5"
                 />
               </div>
+
+              {/* Claimed badge or claim link */}
+              {entity.claimed ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-croll/40 bg-croll/10 px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-croll">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                    <path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2zm-1.2 14.6L6.6 12.4l1.4-1.4 2.8 2.8 5.6-5.6 1.4 1.4-7 7z" />
+                  </svg>
+                  Claimed
+                </span>
+              ) : (
+                <Link
+                  href={`/claim?name=${encodeURIComponent(entity.name)}&type=${entity.type}`}
+                  className="text-xs text-gray-600 transition hover:text-gray-400"
+                >
+                  Is this you? Claim this page →
+                </Link>
+              )}
             </div>
 
             {/* Right column — 3×2 hero grid */}
@@ -412,7 +430,28 @@ export default async function EntityPage({
           ) : null}
 
           <div className="mt-6">
-            <HighlightsGrid items={highlightsMedia} />
+            {highlightsMedia.length === 0 ? (
+              <div className="rounded-xl border border-white/8 bg-white/[0.02] px-6 py-12 text-center">
+                <p className="font-mono text-[11px] uppercase tracking-widest text-gray-600">
+                  // NO FOOTAGE YET
+                </p>
+                <p className="mt-3 text-sm text-gray-500">
+                  Be the first to film at {entity.name}&apos;s next show.
+                </p>
+                <Link
+                  href={
+                    allEvents.find((ev) => ev.event_date >= todayISO)
+                      ? `/${entity.slug}/${allEvents.find((ev) => ev.event_date >= todayISO)!.slug}`
+                      : '/upload'
+                  }
+                  className="mt-4 inline-flex items-center gap-2 rounded border border-white/15 px-4 py-2 text-sm text-white transition hover:bg-white/5"
+                >
+                  Upload footage →
+                </Link>
+              </div>
+            ) : (
+              <HighlightsGrid items={highlightsMedia} />
+            )}
           </div>
         </section>
 
@@ -795,9 +834,13 @@ function EventCard({
           {event.venue_name}
           {event.city ? `, ${event.city}` : ''}
         </p>
-        <p className="mt-0.5 font-mono text-[11px] text-gray-500">
-          {formatCount(event.upload_count)} uploads
-        </p>
+        {event.upload_count > 0 ? (
+          <p className="mt-0.5 font-mono text-[11px] text-gray-500">
+            {formatCount(event.upload_count)} uploads
+          </p>
+        ) : (
+          <p className="mt-0.5 font-mono text-[11px] text-croll/70">Upload footage →</p>
+        )}
       </div>
 
       {/* Thumbnail */}

@@ -11,6 +11,7 @@ const NAV = [
   { href: '/admin/events', label: 'Events' },
   { href: '/admin/media', label: 'Media uploads' },
   { href: '/admin/moderation', label: 'Moderation' },
+  { href: '/admin/claims', label: 'Page requests' },
 ];
 
 export default function AdminShellLayout({ children }: { children: React.ReactNode }) {
