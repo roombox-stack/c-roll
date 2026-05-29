@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { EventsFilter } from '@/components/admin/events-filter';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,16 +18,30 @@ interface EventRow {
   entity: { name: string; slug: string } | { name: string; slug: string }[] | null;
 }
 
-export default async function EventsListPage() {
+export default async function EventsListPage({
+  searchParams,
+}: {
+  searchParams: { entity?: string; from?: string; to?: string };
+}) {
   const supabase = createAdminClient();
-  const { data } = await supabase
+
+  let query = supabase
     .from('events')
     .select(
       'id, slug, name, venue_name, city, state, event_date, upload_count, entity:entities(name, slug)',
-    )
-    .order('event_date', { ascending: false });
+    );
+
+  if (searchParams.entity) query = query.eq('entity_id', searchParams.entity);
+  if (searchParams.from) query = query.gte('event_date', searchParams.from);
+  if (searchParams.to) query = query.lte('event_date', searchParams.to);
+
+  const [{ data }, { data: entities }] = await Promise.all([
+    query.order('event_date', { ascending: false }),
+    supabase.from('entities').select('id, name').order('name'),
+  ]);
 
   const rows = (data ?? []) as unknown as EventRow[];
+  const entityOptions = (entities ?? []) as Array<{ id: string; name: string }>;
 
   return (
     <div className="space-y-6">
@@ -40,9 +55,11 @@ export default async function EventsListPage() {
         </Link>
       </div>
 
+      <EventsFilter entities={entityOptions} />
+
       <div className="overflow-hidden rounded-lg border border-ash bg-smoke">
         {rows.length === 0 ? (
-          <p className="p-4 text-sm text-gray-400">No events yet.</p>
+          <p className="p-4 text-sm text-gray-400">No events match these filters.</p>
         ) : (
           <table className="w-full text-sm">
             <thead className="border-b border-ash text-left text-xs uppercase text-gray-400">
