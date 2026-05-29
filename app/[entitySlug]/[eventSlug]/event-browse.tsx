@@ -9,7 +9,7 @@
 // All filtering / sorting is client-side against the pre-fetched `media` prop.
 // No re-fetches on filter change.
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { BLUR_DATA_URL } from '@/lib/blur-placeholder';
 import { CardLikeButton } from '@/components/card-like-button';
@@ -96,6 +96,21 @@ export function EventBrowse({
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
   const [sortKey, setSortKey] = useState<SortKey>('views');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [fullscreenId, setFullscreenId] = useState<string | null>(null);
+  const savedScrollY = useRef(0);
+
+  // Lock body scroll while fullscreen overlay is open; restore on close.
+  useEffect(() => {
+    if (fullscreenId) {
+      savedScrollY.current = window.scrollY;
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+      // Restore scroll position after the overlay unmounts.
+      window.scrollTo({ top: savedScrollY.current, behavior: 'instant' });
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [fullscreenId]);
 
   // Setlist data quality guard — strip non-song entries before rendering.
   // Some events have "Play Video", empty strings, or other UI labels mixed
@@ -193,6 +208,12 @@ export function EventBrowse({
       null
     : null;
 
+  const fullscreenMedia = fullscreenId
+    ? filtered.find((m) => m.id === fullscreenId) ??
+      media.find((m) => m.id === fullscreenId) ??
+      null
+    : null;
+
   function toggleSection(s: SectionTag) {
     setSelectedSections((prev) => {
       const next = new Set(prev);
@@ -208,6 +229,15 @@ export function EventBrowse({
   }
 
   return (
+    <>
+    {/* ── Mobile video fullscreen overlay ─────────────────────────────── */}
+    {fullscreenMedia ? (
+      <VideoFullscreenOverlay
+        media={fullscreenMedia}
+        onClose={() => setFullscreenId(null)}
+      />
+    ) : null}
+
     <div className="flex flex-col gap-6 md:flex-row md:gap-0">
       {/* ── Left rail (desktop) ─────────────────────────────────────────── */}
       <aside className="hidden md:block md:w-[220px] md:shrink-0 md:self-start md:border-r md:border-white/[0.08] md:bg-[#0d0d0d] md:pr-4">
@@ -347,7 +377,8 @@ export function EventBrowse({
             {/* Mobile: 2-column flush portrait grid */}
             <div className="grid grid-cols-2 md:hidden" style={{ gap: '1px', backgroundColor: 'rgba(255,255,255,0.08)' }}>
               {filtered.map((m) => {
-                if (m.id === expandedId && expandedMedia) {
+                // Videos → fullscreen overlay; photos → inline expand
+                if (m.file_type === 'photo' && m.id === expandedId && expandedMedia) {
                   return (
                     <ExpandedCard
                       key={m.id}
@@ -361,7 +392,13 @@ export function EventBrowse({
                   <MobileTile
                     key={m.id}
                     media={m}
-                    onClick={() => setExpandedId(m.id)}
+                    onClick={() => {
+                      if (m.file_type === 'video') {
+                        setFullscreenId(m.id);
+                      } else {
+                        setExpandedId(m.id === expandedId ? null : m.id);
+                      }
+                    }}
                   />
                 );
               })}
@@ -394,6 +431,7 @@ export function EventBrowse({
         )}
       </section>
     </div>
+    </>
   );
 }
 
@@ -664,7 +702,95 @@ function TypePill({
   );
 }
 
-// ── Mobile tile (3-column flush square grid) ─────────────────────────────────
+// ── Mobile video fullscreen overlay ─────────────────────────────────────────
+
+function VideoFullscreenOverlay({
+  media,
+  onClose,
+}: {
+  media: EventBrowseMedia;
+  onClose: () => void;
+}) {
+  const song = cleanLabel(media.song_tag);
+
+  // Swipe-down to close
+  const touchStartY = useRef(0);
+  function onTouchStart(e: React.TouchEvent) {
+    touchStartY.current = e.touches[0].clientY;
+  }
+  function onTouchEnd(e: React.TouchEvent) {
+    if (e.changedTouches[0].clientY - touchStartY.current > 60) onClose();
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex flex-col bg-black"
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+    >
+      {/* Video fills the screen */}
+      <div className="flex flex-1 items-center justify-center overflow-hidden">
+        {media.mux_playback_id ? (
+          <VideoPlayer
+            playbackId={media.mux_playback_id}
+            autoPlay
+            poster={media.thumbnail_url ?? undefined}
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-sm text-gray-500">
+            Video unavailable
+          </div>
+        )}
+      </div>
+
+      {/* Close button */}
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Close"
+        className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white"
+        style={{ fontSize: '20px' }}
+      >
+        ×
+      </button>
+
+      {/* Metadata strip — bottom of screen */}
+      <div
+        className="absolute inset-x-0 bottom-0 px-4 pb-6 pt-16"
+        style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%)' }}
+      >
+        <div className="flex flex-wrap items-center gap-1.5 mb-2">
+          {media.section_tag ? (
+            <span
+              className="rounded px-2 py-0.5 font-mono text-[10px] font-semibold tracking-widest"
+              style={{ backgroundColor: 'rgba(255,204,0,0.15)', color: '#FFCC00' }}
+            >
+              {SECTION_BADGE_LABELS[media.section_tag]}
+            </span>
+          ) : null}
+          {song ? (
+            <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-white/80">
+              {song}
+            </span>
+          ) : null}
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <span className="truncate font-mono text-xs text-gray-400">
+            {handleFor(media)}
+            <span className="mx-1.5 text-gray-600">·</span>
+            {formatCount(media.view_count)} views
+          </span>
+          <div className="flex items-center gap-2">
+            <CardLikeButton mediaId={media.id} initialLikeCount={media.like_count} />
+            <ShareButton mediaId={media.id} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Mobile tile (2-column flush portrait grid) ────────────────────────────────
 
 function MobileTile({
   media,
