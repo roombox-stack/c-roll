@@ -328,11 +328,8 @@ export default async function HomePage() {
             who were there.
           </h1>
           <p className="mt-6 max-w-2xl text-base leading-relaxed text-gray-300">
-            Floor pit. Section 200s. Upper deck. Tens of thousands of fans pointing their
-            cameras at the same night — organized into one navigable show. Across{' '}
-            <span className="text-white">{formatCount(entitiesCount)} artists</span>,{' '}
-            <span className="text-white">{formatCount(eventsCount)} events</span>,{' '}
-            <span className="text-white">{formatCount(clipsCount)} clips</span>.
+            Floor pit. Sideline. Turn 3. Tens of thousands of fans pointing their cameras
+            at the same moment — organized into one navigable experience.
           </p>
 
           <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -343,7 +340,7 @@ export default async function HomePage() {
               <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
                 <path d="M8 5v14l11-7z" />
               </svg>
-              Pick a show
+              Pick an event
             </Link>
             <Link
               href="/about"
