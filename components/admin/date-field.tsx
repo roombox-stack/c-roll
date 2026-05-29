@@ -78,10 +78,20 @@ export function DateField({
   ];
 
   function prevMonth() {
-    setViewMonth((m) => (m === 0 ? (setViewYear((y) => y - 1), 11) : m - 1));
+    if (viewMonth === 0) {
+      setViewMonth(11);
+      setViewYear(viewYear - 1);
+    } else {
+      setViewMonth(viewMonth - 1);
+    }
   }
   function nextMonth() {
-    setViewMonth((m) => (m === 11 ? (setViewYear((y) => y + 1), 0) : m + 1));
+    if (viewMonth === 11) {
+      setViewMonth(0);
+      setViewYear(viewYear + 1);
+    } else {
+      setViewMonth(viewMonth + 1);
+    }
   }
   function pick(day: number) {
     setValue(toISO(viewYear, viewMonth, day));
@@ -89,8 +99,11 @@ export function DateField({
   }
 
   return (
-    <label className="block space-y-1">
-      <span className="text-sm text-gray-400">{label}</span>
+    // NOTE: must NOT be a <label> — a label auto-associates with its first
+    // labelable descendant (the button), which double-fires the toggle and
+    // makes the popover open-then-immediately-close.
+    <div className="block space-y-1">
+      <span className="block text-sm text-gray-400">{label}</span>
       {/* Hidden field carries the real value into the form. */}
       <input type="hidden" name={name} value={value} required={required} />
 
@@ -187,6 +200,6 @@ export function DateField({
           </div>
         ) : null}
       </div>
-    </label>
+    </div>
   );
 }
