@@ -119,4 +119,6 @@ export async function updateEvent(id: string, formData: FormData) {
 
   revalidatePath('/admin/events');
   revalidatePath(`/admin/events/${id}`);
+  // Redirect back with a changing token so the page shows a "saved" toast.
+  redirect(`/admin/events/${id}?saved=${Date.now()}`);
 }

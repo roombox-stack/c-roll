@@ -6,6 +6,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { Field, TextareaField, SubmitButton } from '@/components/admin/form-fields';
 import { BulkSongTagger, type TaggableMedia } from '@/components/admin/bulk-song-tagger';
 import { updateEvent } from '../actions';
+import { SavedToast } from '@/components/admin/saved-toast';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,7 +28,13 @@ interface EventEditRow {
   entity: { id: string; name: string; slug: string } | null;
 }
 
-export default async function EditEventPage({ params }: { params: { id: string } }) {
+export default async function EditEventPage({
+  params,
+  searchParams,
+}: {
+  params: { id: string };
+  searchParams: { saved?: string };
+}) {
   const supabase = createAdminClient();
   const { data } = await supabase
     .from('events')
@@ -56,6 +63,7 @@ export default async function EditEventPage({ params }: { params: { id: string }
 
   return (
     <div className="space-y-6">
+      <SavedToast token={searchParams.saved} />
       <div>
         <Link href="/admin/events" className="text-sm text-gray-400 hover:text-white">
           ← Events

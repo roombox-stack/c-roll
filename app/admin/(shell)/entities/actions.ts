@@ -95,4 +95,6 @@ export async function updateEntity(id: string, formData: FormData) {
 
   revalidatePath('/admin/entities');
   revalidatePath(`/admin/entities/${id}`);
+  // Redirect back with a changing token so the page shows a "saved" toast.
+  redirect(`/admin/entities/${id}?saved=${Date.now()}`);
 }

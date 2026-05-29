@@ -12,6 +12,7 @@ import {
 } from '@/components/admin/form-fields';
 import { updateEntity } from '../actions';
 import { HeroPickerClient } from './hero-picker';
+import { SavedToast } from '@/components/admin/saved-toast';
 
 const TYPE_OPTIONS = [
   { value: 'artist', label: 'Artist' },
@@ -22,7 +23,13 @@ const TYPE_OPTIONS = [
 
 export const dynamic = 'force-dynamic';
 
-export default async function EditEntityPage({ params }: { params: { id: string } }) {
+export default async function EditEntityPage({
+  params,
+  searchParams,
+}: {
+  params: { id: string };
+  searchParams: { saved?: string };
+}) {
   const supabase = createAdminClient();
 
   const [{ data: entity }, { data: mediaRows }] = await Promise.all([
@@ -47,6 +54,7 @@ export default async function EditEntityPage({ params }: { params: { id: string 
 
   return (
     <div className="max-w-4xl space-y-6">
+      <SavedToast token={searchParams.saved} />
       <div>
         <Link href="/admin/entities" className="text-sm text-gray-400 hover:text-white">
           ← Entities
