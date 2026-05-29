@@ -46,7 +46,8 @@ export async function loadBrowseDataset(): Promise<BrowseDataset> {
   const [entitiesRes, eventsRes, mediaRes, mediaCountRes] = await Promise.all([
     supabase
       .from('entities')
-      .select('id, slug, name, type, hero_image_url, follower_count'),
+      .select('id, slug, name, type, hero_image_url, follower_count')
+      .eq('hidden', false),
     supabase
       .from('events')
       .select('id, slug, venue_name, city, state, event_date, upload_count, entity_id')

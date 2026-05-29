@@ -31,6 +31,7 @@ export async function GET(req: NextRequest) {
   const { data: entities, error: entErr } = await supabase
     .from('entities')
     .select(ENTITY_FIELDS)
+    .eq('hidden', false)
     .or(`name.ilike.${pattern},slug.ilike.${pattern}`)
     .order('follower_count', { ascending: false })
     .limit(MAX);

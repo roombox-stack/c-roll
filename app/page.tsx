@@ -142,7 +142,7 @@ export default async function HomePage() {
     topEntitiesRes,
     featuredEventRes,
   ] = await Promise.all([
-    supabase.from('entities').select('*', { count: 'exact', head: true }),
+    supabase.from('entities').select('*', { count: 'exact', head: true }).eq('hidden', false),
     supabase.from('events').select('*', { count: 'exact', head: true }),
     supabase
       .from('media')
@@ -175,6 +175,7 @@ export default async function HomePage() {
     supabase
       .from('entities')
       .select('id, slug, name, type, follower_count, hero_image_url')
+      .eq('hidden', false)
       .order('follower_count', { ascending: false })
       .limit(6),
 

@@ -11,7 +11,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const supabase = createAdminClient();
 
   const [entitiesRes, eventsRes] = await Promise.all([
-    supabase.from('entities').select('slug, created_at'),
+    supabase.from('entities').select('slug, created_at').eq('hidden', false),
     supabase
       .from('events')
       .select('slug, created_at, entity:entities(slug)'),
