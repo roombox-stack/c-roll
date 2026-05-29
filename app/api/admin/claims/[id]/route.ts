@@ -1,9 +1,30 @@
 // PATCH /api/admin/claims/[id]
 // Requires admin auth (middleware guards /api/admin/*).
-// Updates claim status, optionally links to an entity and marks it claimed.
+// Updates claim status. On approval:
+//   - If entity_id provided: links to that existing entity and marks it claimed.
+//   - If no entity_id: auto-creates a new entity from the claim data, marks it
+//     claimed, and returns the new entity in the response.
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+
+// Map claim entity_type → entities.type DB enum
+const ENTITY_TYPE_MAP: Record<string, string> = {
+  music: 'artist',
+  sports: 'team',
+  event_brand: 'event_brand',
+  venue: 'venue',
+};
+
+function slugify(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80);
+}
 
 export async function PATCH(
   req: NextRequest,
@@ -32,15 +53,58 @@ export async function PATCH(
 
   const supabase = createAdminClient();
 
-  // Fetch the claim first (need email for claimed_by)
+  // Fetch the full claim (need name/email/entity_type for auto-create)
   const { data: claim, error: fetchErr } = await supabase
     .from('page_claims')
-    .select('id, email')
+    .select('id, name, email, entity_type')
     .eq('id', params.id)
     .maybeSingle();
 
   if (fetchErr || !claim) {
     return NextResponse.json({ error: 'Claim not found' }, { status: 404 });
+  }
+
+  let resolvedEntityId = entity_id ?? null;
+  let createdEntity: { id: string; slug: string; name: string } | null = null;
+
+  // On approval, ensure an entity exists
+  if (status === 'approved') {
+    if (resolvedEntityId) {
+      // Link to existing entity — mark it claimed
+      await supabase
+        .from('entities')
+        .update({
+          claimed: true,
+          claimed_at: new Date().toISOString(),
+          claimed_by: claim.email,
+        })
+        .eq('id', resolvedEntityId);
+    } else {
+      // Auto-create a new entity from the claim data
+      const dbType = ENTITY_TYPE_MAP[claim.entity_type] ?? 'artist';
+      const slug = slugify(claim.name);
+
+      const { data: newEntity, error: createErr } = await supabase
+        .from('entities')
+        .insert({
+          name: claim.name,
+          slug,
+          type: dbType,
+          claimed: true,
+          claimed_at: new Date().toISOString(),
+          claimed_by: claim.email,
+        })
+        .select('id, slug, name')
+        .single();
+
+      if (createErr) {
+        console.error('claims PATCH entity create error:', createErr);
+        return NextResponse.json({ error: 'Failed to create entity: ' + createErr.message }, { status: 500 });
+      }
+
+      resolvedEntityId = newEntity.id;
+      createdEntity = newEntity;
+    }
   }
 
   // Update the claim row
@@ -49,7 +113,7 @@ export async function PATCH(
     .update({
       status,
       admin_notes: admin_notes ?? null,
-      entity_id: entity_id ?? null,
+      entity_id: resolvedEntityId,
       reviewed_at: new Date().toISOString(),
     })
     .eq('id', params.id)
@@ -61,22 +125,5 @@ export async function PATCH(
     return NextResponse.json({ error: 'Failed to update claim' }, { status: 500 });
   }
 
-  // If approving and an entity was linked, mark the entity as claimed
-  if (status === 'approved' && entity_id) {
-    const { error: entityErr } = await supabase
-      .from('entities')
-      .update({
-        claimed: true,
-        claimed_at: new Date().toISOString(),
-        claimed_by: claim.email,
-      })
-      .eq('id', entity_id);
-
-    if (entityErr) {
-      console.error('claims PATCH entity update error:', entityErr);
-      // Non-fatal — return the claim update but note the entity update failed
-    }
-  }
-
-  return NextResponse.json(updated);
+  return NextResponse.json({ ...updated, created_entity: createdEntity });
 }

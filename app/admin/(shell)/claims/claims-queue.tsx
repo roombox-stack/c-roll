@@ -84,7 +84,10 @@ function ActionPanel({
       if (!res.ok) {
         setError(data.error ?? 'Failed to update claim');
       } else {
-        onUpdated({ ...claim, ...data });
+        // If a new entity was auto-created, fold it into the claim row so the
+        // "Linked →" line shows up immediately without a page reload.
+        const entity = data.created_entity ?? claim.entity ?? null;
+        onUpdated({ ...claim, ...data, entity });
         setAction(null);
       }
     } catch {
@@ -119,13 +122,16 @@ function ActionPanel({
     <div className="mt-3 space-y-3 rounded-lg border border-white/10 bg-white/[0.03] p-4">
       {action === 'approve' && (
         <div className="space-y-1">
-          <label className="block text-xs text-gray-400">Link to existing entity (optional)</label>
+          <label className="block text-xs text-gray-400">
+            Link to existing entity{' '}
+            <span className="text-gray-600">(leave blank to auto-create a new one)</span>
+          </label>
           <select
             value={entityId}
             onChange={(e) => setEntityId(e.target.value)}
             className="w-full rounded border border-ash bg-ink px-3 py-2 text-sm text-white focus:border-gray-500 focus:outline-none"
           >
-            <option value="">No entity linked yet</option>
+            <option value="">— Create new entity from claim —</option>
             {entityOptions.map((e) => (
               <option key={e.id} value={e.id}>{e.name}</option>
             ))}
