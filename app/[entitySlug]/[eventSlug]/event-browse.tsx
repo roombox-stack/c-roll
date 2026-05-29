@@ -344,8 +344,8 @@ export function EventBrowse({
           </p>
         ) : (
           <>
-            {/* Mobile: 3-column flush square grid */}
-            <div className="grid grid-cols-3 md:hidden">
+            {/* Mobile: 2-column flush portrait grid */}
+            <div className="grid grid-cols-2 md:hidden" style={{ gap: '1px', backgroundColor: 'rgba(255,255,255,0.08)' }}>
               {filtered.map((m) => {
                 if (m.id === expandedId && expandedMedia) {
                   return (
@@ -680,7 +680,7 @@ function MobileTile({
     <button
       type="button"
       onClick={onClick}
-      className="group relative block aspect-square w-full overflow-hidden bg-smoke"
+      className="group relative block aspect-[3/4] w-full overflow-hidden bg-smoke"
     >
       {thumb ? (
         <Image
