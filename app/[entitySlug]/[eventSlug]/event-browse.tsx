@@ -214,6 +214,10 @@ export function EventBrowse({
       null
     : null;
 
+  // Videos-only list for prev/next navigation inside the fullscreen overlay.
+  const videoList = useMemo(() => filtered.filter((m) => m.file_type === 'video'), [filtered]);
+  const fullscreenIdx = fullscreenId ? videoList.findIndex((m) => m.id === fullscreenId) : -1;
+
   function toggleSection(s: SectionTag) {
     setSelectedSections((prev) => {
       const next = new Set(prev);
@@ -235,6 +239,8 @@ export function EventBrowse({
       <VideoFullscreenOverlay
         media={fullscreenMedia}
         onClose={() => setFullscreenId(null)}
+        onPrev={fullscreenIdx > 0 ? () => setFullscreenId(videoList[fullscreenIdx - 1].id) : null}
+        onNext={fullscreenIdx < videoList.length - 1 ? () => setFullscreenId(videoList[fullscreenIdx + 1].id) : null}
       />
     ) : null}
 
@@ -707,9 +713,13 @@ function TypePill({
 function VideoFullscreenOverlay({
   media,
   onClose,
+  onPrev,
+  onNext,
 }: {
   media: EventBrowseMedia;
   onClose: () => void;
+  onPrev: (() => void) | null;
+  onNext: (() => void) | null;
 }) {
   const song = cleanLabel(media.song_tag);
 
@@ -754,6 +764,32 @@ function VideoFullscreenOverlay({
       >
         ×
       </button>
+
+      {/* Prev / Next arrows — vertically centred, outside the swipe zone */}
+      {onPrev ? (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onPrev(); }}
+          aria-label="Previous video"
+          className="absolute left-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
+      ) : null}
+      {onNext ? (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onNext(); }}
+          aria-label="Next video"
+          className="absolute right-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </button>
+      ) : null}
 
       {/* Metadata strip — bottom of screen */}
       <div
