@@ -216,30 +216,28 @@ export default async function EventPage({
               </EventStat>
             </div>
 
-            {/* Stats + attendance — mobile: two-row layout */}
-            <div className="space-y-3 md:hidden">
-              {/* Row 1: three stats strip */}
-              <div className="grid grid-cols-3 divide-x divide-white/10">
-                {[
-                  { label: 'Clips', value: event.upload_count },
-                  { label: 'Contributors', value: contribKeys.size },
-                  { label: 'Attendance', value: attendeeCount ?? 0 },
-                ].map(({ label, value }) => (
-                  <div key={label} className="flex flex-col items-center py-2 first:items-start last:items-end">
-                    <span className="text-[20px] font-medium tabular-nums leading-none">{formatCount(value)}</span>
-                    <span className="mt-1 text-[10px] font-semibold uppercase tracking-widest text-gray-500">{label}</span>
-                  </div>
-                ))}
+            {/* Stats + attendance — mobile: single row, attendance col has inline button */}
+            <div className="grid grid-cols-3 divide-x divide-white/10 md:hidden">
+              <div className="flex flex-col py-2">
+                <span className="text-[20px] font-medium tabular-nums leading-none">{formatCount(event.upload_count)}</span>
+                <span className="mt-1 text-[10px] font-semibold uppercase tracking-widest text-gray-500">Clips</span>
               </div>
-              {/* Row 2: full-width attendance action */}
-              <AttendanceButton
-                eventId={event.id}
-                eventUrl={baseUrl}
-                initiallyAttending={initiallyAttending}
-                initialCount={attendeeCount ?? 0}
-                isAuthed={!!currentUser}
-                fullWidth
-              />
+              <div className="flex flex-col items-center py-2">
+                <span className="text-[20px] font-medium tabular-nums leading-none">{formatCount(contribKeys.size)}</span>
+                <span className="mt-1 text-[10px] font-semibold uppercase tracking-widest text-gray-500">Contributors</span>
+              </div>
+              <div className="flex flex-col items-end py-2">
+                <span className="text-[20px] font-medium tabular-nums leading-none">{formatCount(attendeeCount ?? 0)}</span>
+                <span className="mt-1 text-[10px] font-semibold uppercase tracking-widest text-gray-500">Attendance</span>
+                <AttendanceButton
+                  eventId={event.id}
+                  eventUrl={baseUrl}
+                  initiallyAttending={initiallyAttending}
+                  initialCount={attendeeCount ?? 0}
+                  isAuthed={!!currentUser}
+                  compact
+                />
+              </div>
             </div>
           </div>
 
