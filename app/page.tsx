@@ -616,10 +616,10 @@ function CalendarBucket({
                 // contributor · 14 mins ago") or short ("0 clips"). Without
                 // this, each Link is its own grid, so an auto column shrinks
                 // when stats are short and shoves the venue rightward.
-                className="flex items-center gap-3 rounded-md px-2 py-1.5 transition hover:bg-white/5 md:grid md:grid-cols-[1fr_1.4fr_320px] md:gap-6"
+                className="flex items-center gap-3 rounded-md px-2 py-1.5 transition hover:bg-white/5 md:grid md:grid-cols-[40px_1fr_1.4fr_320px] md:gap-4"
               >
-                {/* Thumbnail — mobile only */}
-                <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded bg-smoke md:hidden">
+                {/* Thumbnail */}
+                <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded bg-smoke">
                   {ent?.hero_image_url ? (
                     <Image
                       src={ent.hero_image_url}
