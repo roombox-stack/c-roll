@@ -45,7 +45,6 @@ type ViewMode = 'entities' | 'shows';
 const TYPE_PILLS: Array<{ value: TypeFilter; label: string }> = [
   { value: 'all', label: 'All' },
   { value: 'artist', label: 'Music' },
-  { value: 'team', label: 'Sports' },
   { value: 'event_brand', label: 'Events' },
 ];
 

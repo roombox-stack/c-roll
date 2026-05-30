@@ -8,7 +8,6 @@ import { createClient } from '@/lib/supabase/server';
 const TOPIC_NAV: Array<{ href: string; label: string }> = [
   { href: '/browse', label: 'Browse' },
   { href: '/music', label: 'Music' },
-  { href: '/sports', label: 'Sports' },
   { href: '/events', label: 'Events' },
 ];
 
