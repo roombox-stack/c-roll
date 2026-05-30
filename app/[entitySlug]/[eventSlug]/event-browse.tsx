@@ -797,6 +797,14 @@ function VideoFullscreenOverlay({
         style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%)' }}
       >
         <div className="flex flex-wrap items-center gap-1.5 mb-2">
+          {media.section_tag ? (
+            <span
+              className="rounded px-2 py-0.5 font-mono text-[10px] font-semibold tracking-widest"
+              style={{ backgroundColor: 'rgba(255,204,0,0.15)', color: '#FFCC00' }}
+            >
+              {SECTION_BADGE_LABELS[media.section_tag]}
+            </span>
+          ) : null}
           {song ? (
             <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-white/80">
               {song}
@@ -904,6 +912,16 @@ function MosaicTile({
       ) : (
         <div className="absolute inset-0 bg-gradient-to-br from-ash to-smoke" />
       )}
+      {/* Section badge top-left */}
+      {media.section_tag ? (
+        <span
+          className="absolute left-2 top-2 rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold tracking-widest"
+          style={{ backgroundColor: 'rgba(255,204,0,0.15)', color: '#FFCC00' }}
+        >
+          {SECTION_BADGE_LABELS[media.section_tag]}
+        </span>
+      ) : null}
+
       {/* Duration top-right (videos only) */}
       {isVideo && media.duration_sec ? (
         <span className="absolute right-2 top-2 rounded bg-black/70 px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-white">
@@ -983,6 +1001,14 @@ function ExpandedCard({
 
         <div className="flex flex-col gap-3 p-4 md:p-5">
           <div className="flex flex-wrap items-center gap-1.5">
+            {media.section_tag ? (
+              <span
+                className="rounded px-2 py-0.5 font-mono text-[10px] font-semibold tracking-widest"
+                style={{ backgroundColor: 'rgba(255,204,0,0.15)', color: '#FFCC00' }}
+              >
+                {SECTION_BADGE_LABELS[media.section_tag]}
+              </span>
+            ) : null}
             {song ? (
               <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-white/80">
                 {song}
