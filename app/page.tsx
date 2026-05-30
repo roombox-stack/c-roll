@@ -47,7 +47,7 @@ interface CalendarEvent {
   state: string | null;
   event_date: string;
   upload_count: number;
-  entity: { slug: string; name: string } | { slug: string; name: string }[] | null;
+  entity: { slug: string; name: string; hero_image_url: string | null } | { slug: string; name: string; hero_image_url: string | null }[] | null;
 }
 
 interface HomeEntity {
@@ -167,7 +167,7 @@ export default async function HomePage() {
     supabase
       .from('events')
       .select(
-        'id, slug, venue_name, city, state, event_date, upload_count, entity:entities(slug, name)',
+        'id, slug, venue_name, city, state, event_date, upload_count, entity:entities(slug, name, hero_image_url)',
       )
       .eq('hidden', false)
       .gte('event_date', wrappedStartISO)
@@ -616,8 +616,22 @@ function CalendarBucket({
                 // contributor · 14 mins ago") or short ("0 clips"). Without
                 // this, each Link is its own grid, so an auto column shrinks
                 // when stats are short and shoves the venue rightward.
-                className="grid grid-cols-1 items-center gap-2 rounded-md px-2 py-1.5 transition hover:bg-white/5 md:grid-cols-[1fr_1.4fr_320px] md:gap-6"
+                className="flex items-center gap-3 rounded-md px-2 py-1.5 transition hover:bg-white/5 md:grid md:grid-cols-[1fr_1.4fr_320px] md:gap-6"
               >
+                {/* Thumbnail — mobile only */}
+                <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded bg-smoke md:hidden">
+                  {ent?.hero_image_url ? (
+                    <Image
+                      src={ent.hero_image_url}
+                      alt=""
+                      fill
+                      sizes="40px"
+                      className="object-cover"
+                      unoptimized
+                    />
+                  ) : null}
+                </span>
+                <span className="min-w-0 flex-1 md:contents">
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-semibold text-white">
                     {ent?.name ?? ev.venue_name}
@@ -650,6 +664,7 @@ function CalendarBucket({
                     {formatCount(ev.upload_count)} clips
                   </span>
                 )}
+                </span>
               </Link>
             </li>
           );
