@@ -41,6 +41,7 @@ export interface EventBrowseMedia {
 
 type SortKey = 'views' | 'recent' | 'floor';
 type TypeFilter = 'all' | 'video' | 'photo';
+type SheetKey = 'song' | 'section' | 'sort' | null;
 
 const SORT_OPTIONS: Array<{ value: SortKey; label: string }> = [
   { value: 'views', label: 'Most viewed' },
@@ -91,25 +92,24 @@ export function EventBrowse({
   const [sortKey, setSortKey] = useState<SortKey>('views');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [fullscreenId, setFullscreenId] = useState<string | null>(null);
+  const [openSheet, setOpenSheet] = useState<SheetKey>(null);
   const savedScrollY = useRef(0);
 
-  // Lock body scroll while fullscreen overlay is open; restore on close.
+  // Lock body scroll while fullscreen overlay or bottom sheet is open.
   useEffect(() => {
-    if (fullscreenId) {
+    if (fullscreenId || openSheet) {
       savedScrollY.current = window.scrollY;
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
-      // Restore scroll position after the overlay unmounts.
-      window.scrollTo({ top: savedScrollY.current, behavior: 'instant' });
+      if (fullscreenId === null && openSheet === null) {
+        window.scrollTo({ top: savedScrollY.current, behavior: 'instant' });
+      }
     }
     return () => { document.body.style.overflow = ''; };
-  }, [fullscreenId]);
+  }, [fullscreenId, openSheet]);
 
   // Setlist data quality guard — strip non-song entries before rendering.
-  // Some events have "Play Video", empty strings, or other UI labels mixed
-  // into their setlist JSON. We filter those out here rather than touching
-  // the data so the component stays robust to whatever Supabase returns.
   const cleanSetlist = useMemo(
     () =>
       setlist.filter((s) => {
@@ -122,8 +122,7 @@ export function EventBrowse({
     [setlist],
   );
 
-  // Per-song clip counts — from ALL media, not just the filtered set, so the
-  // setlist always reflects what's possible to filter to.
+  // Per-song clip counts — from ALL media, not just the filtered set.
   const songCounts = useMemo(() => {
     const m = new Map<string, number>();
     for (const item of media) {
@@ -132,8 +131,7 @@ export function EventBrowse({
     return m;
   }, [media]);
 
-  // Per-section counts — for the CURRENT song filter (so sections that have
-  // zero clips of the active song get dimmed/disabled).
+  // Per-section counts — for the CURRENT song filter.
   const sectionCounts = useMemo(() => {
     const m = new Map<SectionTag, number>();
     const scope = selectedSong
@@ -147,9 +145,7 @@ export function EventBrowse({
     return m;
   }, [media, selectedSong]);
 
-  // Pre-type-filter scope — used both for the final filtered list AND for
-  // computing the All/Videos/Photos counts so the pill labels stay accurate
-  // as the song + section filters change.
+  // Pre-type-filter scope.
   const songSectionScope = useMemo(() => {
     let list = media;
     if (selectedSong) list = list.filter((m) => m.song_tag === selectedSong);
@@ -226,6 +222,17 @@ export function EventBrowse({
     setExpandedId(null);
   }
 
+  // ── Chip labels ─────────────────────────────────────────────────────────────
+  const songChipLabel = selectedSong ?? 'All songs';
+  const sectionChipLabel =
+    selectedSections.size === 0
+      ? 'All sections'
+      : selectedSections.size === 1
+        ? SECTION_LABELS[Array.from(selectedSections)[0]]
+        : `${selectedSections.size} sections`;
+  const sortChipLabel =
+    SORT_OPTIONS.find((o) => o.value === sortKey)?.label ?? 'Most viewed';
+
   return (
     <>
     {/* ── Mobile video fullscreen overlay ─────────────────────────────── */}
@@ -237,6 +244,33 @@ export function EventBrowse({
         onNext={fullscreenIdx < videoList.length - 1 ? () => setFullscreenId(videoList[fullscreenIdx + 1].id) : null}
       />
     ) : null}
+
+    {/* ── Bottom sheets (mobile) ───────────────────────────────────────── */}
+    <BottomSheet open={openSheet === 'song'} onClose={() => setOpenSheet(null)} title="// STEP THROUGH THE SHOW">
+      <SongSheet
+        setlist={cleanSetlist}
+        songCounts={songCounts}
+        selectedSong={selectedSong}
+        onSelect={(song) => { selectSong(song); setOpenSheet(null); }}
+      />
+    </BottomSheet>
+
+    <BottomSheet open={openSheet === 'section'} onClose={() => setOpenSheet(null)} title="// FILTER BY SECTION">
+      <SectionSheet
+        sectionCounts={sectionCounts}
+        selectedSections={selectedSections}
+        onToggle={toggleSection}
+        onClear={() => setSelectedSections(new Set())}
+        onClose={() => setOpenSheet(null)}
+      />
+    </BottomSheet>
+
+    <BottomSheet open={openSheet === 'sort'} onClose={() => setOpenSheet(null)} title="// SORT BY">
+      <SortSheet
+        sortKey={sortKey}
+        onSelect={(key) => { setSortKey(key); setOpenSheet(null); }}
+      />
+    </BottomSheet>
 
     <div className="flex flex-col gap-6 md:flex-row md:gap-0">
       {/* ── Left rail (desktop) ─────────────────────────────────────────── */}
@@ -256,40 +290,34 @@ export function EventBrowse({
         </div>
       </aside>
 
-      {/* ── Left rail (mobile — horizontal scroll) ──────────────────────── */}
-      <div className="-mx-4 space-y-2 border-b border-white/5 px-4 pb-3 md:hidden">
-        {/* Row 1: song pills + type pills */}
-        <div className="flex items-center gap-2 overflow-x-auto">
-          <MobileSongPills
-            setlist={cleanSetlist}
-            songCounts={songCounts}
-            selectedSong={selectedSong}
-            onSelectSong={selectSong}
-          />
-          <div className="flex shrink-0 gap-1">
-            <TypePill active={typeFilter === 'all'} count={typeCounts.all} onClick={() => setTypeFilter('all')}>All</TypePill>
-            <TypePill active={typeFilter === 'video'} count={typeCounts.video} disabled={typeCounts.video === 0} onClick={() => setTypeFilter('video')}>Vid</TypePill>
-            <TypePill active={typeFilter === 'photo'} count={typeCounts.photo} disabled={typeCounts.photo === 0} onClick={() => setTypeFilter('photo')}>Pic</TypePill>
-          </div>
+      {/* ── Mobile filter rows ───────────────────────────────────────────── */}
+      <div className="-mx-4 border-b border-white/5 px-4 pb-3 pt-1 md:hidden">
+        {/* Row 1 — Media type toggles */}
+        <div className="flex gap-1.5">
+          <TypePill active={typeFilter === 'all'} count={typeCounts.all} onClick={() => setTypeFilter('all')}>ALL</TypePill>
+          <TypePill active={typeFilter === 'video'} count={typeCounts.video} disabled={typeCounts.video === 0} onClick={() => setTypeFilter('video')}>VID</TypePill>
+          <TypePill active={typeFilter === 'photo'} count={typeCounts.photo} disabled={typeCounts.photo === 0} onClick={() => setTypeFilter('photo')}>PIC</TypePill>
         </div>
-        {/* Row 2: section pills + sort dropdown */}
-        <div className="flex items-center gap-2">
-          <div className="flex flex-1 gap-1.5 overflow-x-auto">
-            <MobileSectionPills
-              sectionCounts={sectionCounts}
-              selectedSections={selectedSections}
-              onToggle={toggleSection}
-            />
-          </div>
-          <select
-            value={sortKey}
-            onChange={(e) => setSortKey(e.target.value as SortKey)}
-            className="shrink-0 rounded border border-white/10 bg-white/5 px-2 py-1 text-[10px] text-white outline-none"
+        {/* Row 2 — Active filter chips (open bottom sheets) */}
+        <div className="mt-2 flex gap-2">
+          <FilterChip
+            active={selectedSong !== null}
+            onClick={() => setOpenSheet('song')}
           >
-            {SORT_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value} className="bg-ink text-white">{o.label}</option>
-            ))}
-          </select>
+            {songChipLabel}
+          </FilterChip>
+          <FilterChip
+            active={selectedSections.size > 0}
+            onClick={() => setOpenSheet('section')}
+          >
+            {sectionChipLabel}
+          </FilterChip>
+          <FilterChip
+            active={sortKey !== 'views'}
+            onClick={() => setOpenSheet('sort')}
+          >
+            {sortChipLabel}
+          </FilterChip>
         </div>
       </div>
 
@@ -325,7 +353,7 @@ export function EventBrowse({
           ) : null}
         </p>
 
-        {/* Type pills + sort dropdown — desktop only (mobile has them in the rail) */}
+        {/* Type pills + sort dropdown — desktop only */}
         <div className="mb-4 hidden flex-wrap items-center justify-between gap-3 md:flex">
           <div className="flex flex-wrap gap-1.5">
             <TypePill
@@ -432,6 +460,294 @@ export function EventBrowse({
       </section>
     </div>
     </>
+  );
+}
+
+// ── Filter chip (Row 2 mobile) ───────────────────────────────────────────────
+
+function FilterChip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex shrink-0 items-center gap-1 rounded-full border px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest transition ${
+        active
+          ? 'border-transparent text-ink'
+          : 'border-white/15 bg-white/5 text-gray-300'
+      }`}
+      style={active ? { backgroundColor: '#FFCC00' } : undefined}
+    >
+      <span className="max-w-[120px] truncate">{children}</span>
+      <svg
+        width="8"
+        height="8"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+        className="shrink-0 opacity-60"
+      >
+        <polyline points="6 9 12 15 18 9" />
+      </svg>
+    </button>
+  );
+}
+
+// ── Bottom sheet ─────────────────────────────────────────────────────────────
+
+function BottomSheet({
+  open,
+  onClose,
+  title,
+  children,
+}: {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      aria-hidden={!open}
+      className={`fixed inset-0 z-50 md:hidden ${open ? 'pointer-events-auto' : 'pointer-events-none'}`}
+      style={{ transition: 'none' }}
+    >
+      {/* Dark overlay */}
+      <div
+        className="absolute inset-0 bg-black/70 transition-opacity duration-200"
+        style={{ opacity: open ? 1 : 0 }}
+        onClick={onClose}
+      />
+      {/* Sheet panel */}
+      <div
+        className="absolute inset-x-0 bottom-0 max-h-[78vh] overflow-y-auto rounded-t-2xl bg-[#1a1a1a]"
+        style={{
+          transform: open ? 'translateY(0)' : 'translateY(100%)',
+          transition: 'transform 0.28s cubic-bezier(0.32, 0.72, 0, 1)',
+        }}
+      >
+        {/* Handle bar */}
+        <div className="flex justify-center pt-3 pb-1">
+          <div className="h-1 w-10 rounded-full bg-white/20" />
+        </div>
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-white/[0.08] px-4 py-2.5">
+          <span className="font-mono text-[10px] uppercase tracking-widest text-croll">
+            {title}
+          </span>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-gray-400 transition hover:bg-white/15"
+            style={{ fontSize: '16px', lineHeight: 1 }}
+          >
+            ×
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ── Song sheet ───────────────────────────────────────────────────────────────
+
+function SongSheet({
+  setlist,
+  songCounts,
+  selectedSong,
+  onSelect,
+}: {
+  setlist: string[];
+  songCounts: Map<string, number>;
+  selectedSong: string | null;
+  onSelect: (song: string | null) => void;
+}) {
+  return (
+    <ul className="divide-y divide-white/[0.06] pb-safe-or-6">
+      <li>
+        <button
+          type="button"
+          onClick={() => onSelect(null)}
+          className={`flex w-full items-center justify-between px-4 py-3.5 text-left transition ${
+            selectedSong === null ? 'text-white' : 'text-gray-300'
+          }`}
+        >
+          <span className="text-sm font-medium">All songs</span>
+          {selectedSong === null ? (
+            <CheckIcon />
+          ) : (
+            <span className="font-mono text-[10px] tabular-nums text-gray-500">
+              {Array.from(songCounts.values()).reduce((a, b) => a + b, 0)}
+            </span>
+          )}
+        </button>
+      </li>
+      {setlist.map((song, i) => {
+        const count = songCounts.get(song) ?? 0;
+        const active = selectedSong === song;
+        const disabled = count === 0;
+        return (
+          <li key={song + i}>
+            <button
+              type="button"
+              onClick={() => !disabled && onSelect(song)}
+              disabled={disabled}
+              className={`flex w-full items-center gap-3 px-4 py-3.5 text-left transition ${
+                active
+                  ? 'text-white'
+                  : disabled
+                    ? 'cursor-not-allowed text-gray-600'
+                    : 'text-gray-300 active:bg-white/5'
+              }`}
+            >
+              <span className="w-5 shrink-0 font-mono text-[10px] tabular-nums text-gray-600">
+                {String(i + 1).padStart(2, '0')}
+              </span>
+              <span className="min-w-0 flex-1 truncate text-sm">{song}</span>
+              {active ? (
+                <CheckIcon />
+              ) : (
+                <span
+                  className={`font-mono text-[10px] tabular-nums ${
+                    count > 0 ? 'text-emerald-400' : 'text-gray-600'
+                  }`}
+                >
+                  {count}
+                </span>
+              )}
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+// ── Section sheet ────────────────────────────────────────────────────────────
+
+function SectionSheet({
+  sectionCounts,
+  selectedSections,
+  onToggle,
+  onClear,
+  onClose,
+}: {
+  sectionCounts: Map<SectionTag, number>;
+  selectedSections: Set<SectionTag>;
+  onToggle: (s: SectionTag) => void;
+  onClear: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <ul className="divide-y divide-white/[0.06] pb-safe-or-6">
+      <li>
+        <button
+          type="button"
+          onClick={() => { onClear(); onClose(); }}
+          className={`flex w-full items-center justify-between px-4 py-3.5 text-left transition ${
+            selectedSections.size === 0 ? 'text-white' : 'text-gray-300 active:bg-white/5'
+          }`}
+        >
+          <span className="text-sm font-medium">All sections</span>
+          {selectedSections.size === 0 && <CheckIcon />}
+        </button>
+      </li>
+      {SECTION_FILTERS.map((s) => {
+        const count = sectionCounts.get(s) ?? 0;
+        const active = selectedSections.has(s);
+        const disabled = count === 0;
+        return (
+          <li key={s}>
+            <button
+              type="button"
+              onClick={() => !disabled && onToggle(s)}
+              disabled={disabled}
+              className={`flex w-full items-center justify-between px-4 py-3.5 text-left transition ${
+                active
+                  ? 'text-white'
+                  : disabled
+                    ? 'cursor-not-allowed text-gray-600'
+                    : 'text-gray-300 active:bg-white/5'
+              }`}
+            >
+              <span className="text-sm">{SECTION_LABELS[s]}</span>
+              <span className="flex items-center gap-2">
+                <span
+                  className={`font-mono text-[10px] tabular-nums ${
+                    active ? 'text-white/60' : count > 0 ? 'text-gray-500' : 'text-gray-700'
+                  }`}
+                >
+                  {count}
+                </span>
+                {active && <CheckIcon />}
+              </span>
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+// ── Sort sheet ───────────────────────────────────────────────────────────────
+
+function SortSheet({
+  sortKey,
+  onSelect,
+}: {
+  sortKey: SortKey;
+  onSelect: (key: SortKey) => void;
+}) {
+  return (
+    <ul className="divide-y divide-white/[0.06] pb-safe-or-6">
+      {SORT_OPTIONS.map((o) => (
+        <li key={o.value}>
+          <button
+            type="button"
+            onClick={() => onSelect(o.value)}
+            className={`flex w-full items-center justify-between px-4 py-3.5 text-left transition ${
+              sortKey === o.value ? 'text-white' : 'text-gray-300 active:bg-white/5'
+            }`}
+          >
+            <span className="text-sm">{o.label}</span>
+            {sortKey === o.value && <CheckIcon />}
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+// ── Shared check icon ────────────────────────────────────────────────────────
+
+function CheckIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#FFCC00"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
   );
 }
 
@@ -560,109 +876,6 @@ function SectionFiltersBlock({
         })}
       </div>
     </div>
-  );
-}
-
-// ── Mobile filter rows ──────────────────────────────────────────────────────
-
-function MobileSongPills({
-  setlist,
-  songCounts,
-  selectedSong,
-  onSelectSong,
-}: {
-  setlist: string[];
-  songCounts: Map<string, number>;
-  selectedSong: string | null;
-  onSelectSong: (song: string | null) => void;
-}) {
-  return (
-    <div className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto">
-      <PillButton
-        active={selectedSong === null}
-        onClick={() => onSelectSong(null)}
-        disabled={false}
-      >
-        All
-      </PillButton>
-      {setlist.map((song, i) => {
-        const count = songCounts.get(song) ?? 0;
-        const disabled = count === 0;
-        return (
-          <PillButton
-            key={song + i}
-            active={selectedSong === song}
-            onClick={() => !disabled && onSelectSong(song)}
-            disabled={disabled}
-          >
-            {song}
-          </PillButton>
-        );
-      })}
-    </div>
-  );
-}
-
-function MobileSectionPills({
-  sectionCounts,
-  selectedSections,
-  onToggle,
-}: {
-  sectionCounts: Map<SectionTag, number>;
-  selectedSections: Set<SectionTag>;
-  onToggle: (s: SectionTag) => void;
-}) {
-  return (
-    <>
-      {SECTION_FILTERS.map((s) => {
-        const count = sectionCounts.get(s) ?? 0;
-        const disabled = count === 0;
-        return (
-          <PillButton
-            key={s}
-            active={selectedSections.has(s)}
-            onClick={() => onToggle(s)}
-            disabled={disabled}
-            mono
-          >
-            {SECTION_LABELS[s]}
-          </PillButton>
-        );
-      })}
-    </>
-  );
-}
-
-function PillButton({
-  active,
-  onClick,
-  disabled,
-  mono = false,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  disabled: boolean;
-  mono?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={`shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs transition ${
-        mono ? 'font-mono uppercase tracking-widest' : ''
-      } ${
-        active
-          ? 'border-croll bg-croll text-ink'
-          : disabled
-            ? 'cursor-not-allowed border-white/5 bg-white/5 text-gray-600'
-            : 'border-white/15 bg-white/5 text-gray-300 hover:border-white/30 hover:text-white'
-      }`}
-    >
-      {children}
-    </button>
   );
 }
 
