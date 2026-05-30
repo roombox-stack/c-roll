@@ -51,6 +51,7 @@ export async function loadBrowseDataset(): Promise<BrowseDataset> {
     supabase
       .from('events')
       .select('id, slug, venue_name, city, state, event_date, upload_count, entity_id')
+      .eq('hidden', false)
       .order('event_date', { ascending: false }),
     supabase
       .from('media')

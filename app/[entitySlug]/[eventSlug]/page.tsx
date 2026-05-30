@@ -54,6 +54,7 @@ async function fetchEvent(eventSlug: string): Promise<EventRow | null> {
       'id, entity_id, slug, name, venue_name, city, state, event_date, tour_name, setlist, upload_count, photo_count, video_count, entity:entities(id, slug, name)',
     )
     .eq('slug', eventSlug)
+    .eq('hidden', false)
     .limit(1)
     .maybeSingle();
   return (data as unknown as EventRow) ?? null;

@@ -47,6 +47,7 @@ export async function GET(req: NextRequest) {
     supabase
       .from('events')
       .select(EVENT_FIELDS)
+      .eq('hidden', false)
       .or(`venue_name.ilike.${pattern},city.ilike.${pattern}`)
       .order('event_date', { ascending: false })
       .limit(MAX),
@@ -54,6 +55,7 @@ export async function GET(req: NextRequest) {
       ? supabase
           .from('events')
           .select(EVENT_FIELDS)
+          .eq('hidden', false)
           .in('entity_id', entityIds)
           .order('event_date', { ascending: false })
           .limit(MAX)

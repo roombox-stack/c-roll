@@ -143,7 +143,7 @@ export default async function HomePage() {
     featuredEventRes,
   ] = await Promise.all([
     supabase.from('entities').select('*', { count: 'exact', head: true }).eq('hidden', false),
-    supabase.from('events').select('*', { count: 'exact', head: true }),
+    supabase.from('events').select('*', { count: 'exact', head: true }).eq('hidden', false),
     supabase
       .from('media')
       .select('*', { count: 'exact', head: true })
@@ -151,6 +151,7 @@ export default async function HomePage() {
     supabase
       .from('events')
       .select('*', { count: 'exact', head: true })
+      .eq('hidden', false)
       .eq('event_date', todayISO),
 
     supabase
@@ -168,6 +169,7 @@ export default async function HomePage() {
       .select(
         'id, slug, venue_name, city, state, event_date, upload_count, entity:entities(slug, name)',
       )
+      .eq('hidden', false)
       .gte('event_date', wrappedStartISO)
       .lte('event_date', weekEndISO)
       .order('event_date', { ascending: true }),
@@ -184,6 +186,7 @@ export default async function HomePage() {
       .select(
         'id, slug, venue_name, city, state, event_date, tour_name, setlist, upload_count, entity:entities(slug, name)',
       )
+      .eq('hidden', false)
       .order('upload_count', { ascending: false })
       .limit(1)
       .maybeSingle(),

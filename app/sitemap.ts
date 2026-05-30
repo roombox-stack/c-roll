@@ -14,7 +14,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     supabase.from('entities').select('slug, created_at').eq('hidden', false),
     supabase
       .from('events')
-      .select('slug, created_at, entity:entities(slug)'),
+      .select('slug, created_at, entity:entities(slug)')
+      .eq('hidden', false),
   ]);
 
   const entries: MetadataRoute.Sitemap = [
