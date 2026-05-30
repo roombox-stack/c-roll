@@ -296,7 +296,7 @@ export default async function HomePage() {
   const heroBgImage = '/hero-home.jpg';
 
   return (
-    <div className="min-h-screen bg-ink text-white">
+    <div className="min-h-screen bg-white text-ink">
       <Nav />
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
@@ -373,13 +373,13 @@ export default async function HomePage() {
                 <p className="font-mono text-[10px] uppercase tracking-widest text-croll">
                   // THERE IS NO NOWHERE
                 </p>
-                <h2 className="mt-2 font-heading text-2xl font-bold text-white md:text-3xl">
+                <h2 className="mt-2 font-heading text-2xl font-bold text-ink md:text-3xl">
                   The clips everyone&apos;s watching.
                 </h2>
               </div>
               <Link
                 href="/search"
-                className="shrink-0 text-sm text-gray-500 transition hover:text-white"
+                className="shrink-0 text-sm text-gray-500 transition hover:text-ink"
               >
                 Top 100 →
               </Link>
@@ -401,19 +401,19 @@ export default async function HomePage() {
                 <p className="font-mono text-[10px] uppercase tracking-widest text-croll">
                   // THIS WEEK
                 </p>
-                <h2 className="mt-2 font-heading text-2xl font-bold text-white md:text-3xl">
+                <h2 className="mt-2 font-heading text-2xl font-bold text-ink md:text-3xl">
                   Shows worth following along with.
                 </h2>
               </div>
               <Link
                 href="/search"
-                className="shrink-0 text-sm text-gray-500 transition hover:text-white"
+                className="shrink-0 text-sm text-gray-500 transition hover:text-ink"
               >
                 Full calendar →
               </Link>
             </div>
 
-            <div className="mt-6 divide-y divide-white/5 border-y border-white/5">
+            <div className="mt-6 divide-y divide-gray-100 border-y border-gray-100">
               {tonight.length > 0 ? (
                 <CalendarBucket
                   label="Tonight"
@@ -459,13 +459,13 @@ export default async function HomePage() {
                 <p className="font-mono text-[10px] uppercase tracking-widest text-croll">
                   // ARTISTS · TEAMS · EVENTS
                 </p>
-                <h2 className="mt-2 font-heading text-2xl font-bold text-white md:text-3xl">
+                <h2 className="mt-2 font-heading text-2xl font-bold text-ink md:text-3xl">
                   Follow what you&apos;d film.
                 </h2>
               </div>
               <Link
                 href="/search"
-                className="shrink-0 text-sm text-gray-500 transition hover:text-white"
+                className="shrink-0 text-sm text-gray-500 transition hover:text-ink"
               >
                 Browse all {formatCount(entitiesCount)} →
               </Link>
@@ -492,13 +492,13 @@ export default async function HomePage() {
                 <p className="font-mono text-[10px] uppercase tracking-widest text-croll">
                   // THE EXPERIENCE
                 </p>
-                <h2 className="mt-2 font-heading text-2xl font-bold text-white md:text-3xl">
+                <h2 className="mt-2 font-heading text-2xl font-bold text-ink md:text-3xl">
                   What a show looks like inside.
                 </h2>
               </div>
               <Link
                 href={`/${firstEntity(featuredEvent.entity)?.slug ?? ''}/${featuredEvent.slug}`}
-                className="shrink-0 text-sm text-gray-500 transition hover:text-white"
+                className="shrink-0 text-sm text-gray-500 transition hover:text-ink"
               >
                 Open this show →
               </Link>
@@ -528,7 +528,7 @@ function TrendingCard({ media }: { media: TrendingMedia }) {
   return (
     <Link
       href={`/watch/${media.id}`}
-      className="group block overflow-hidden rounded-lg bg-smoke transition hover:scale-[1.02]"
+      className="group block overflow-hidden rounded-lg bg-gray-100 transition hover:scale-[1.02]"
     >
       <div className="relative aspect-video bg-black">
         {media.thumbnail_url ? (
@@ -561,7 +561,7 @@ function TrendingCard({ media }: { media: TrendingMedia }) {
       </div>
       <div className="space-y-0.5 px-2.5 py-2 text-[11px]">
         {ent ? (
-          <p className="truncate font-semibold text-white">{ent.name}</p>
+          <p className="truncate font-semibold text-ink">{ent.name}</p>
         ) : null}
         {media.event ? (
           <p className="truncate font-mono text-[10px] text-gray-500">
@@ -594,7 +594,7 @@ function CalendarBucket({
   return (
     <div className="grid grid-cols-[120px_1fr] gap-4 py-5 md:grid-cols-[140px_1fr]">
       <div className="pt-0.5">
-        <p className="font-heading text-sm font-semibold text-white">{label}</p>
+        <p className="font-heading text-sm font-semibold text-ink">{label}</p>
         <p className="mt-0.5 font-mono text-[10px] uppercase tracking-widest text-gray-600">
           {sublabel}
         </p>
@@ -613,10 +613,10 @@ function CalendarBucket({
                 // contributor · 14 mins ago") or short ("0 clips"). Without
                 // this, each Link is its own grid, so an auto column shrinks
                 // when stats are short and shoves the venue rightward.
-                className="grid grid-cols-1 items-center gap-2 rounded-md px-2 py-1.5 transition hover:bg-white/5 md:grid-cols-[1fr_1.4fr_320px] md:gap-6"
+                className="grid grid-cols-1 items-center gap-2 rounded-md px-2 py-1.5 transition hover:bg-gray-50 md:grid-cols-[1fr_1.4fr_320px] md:gap-6"
               >
                 <span className="min-w-0">
-                  <span className="block truncate text-sm font-semibold text-white">
+                  <span className="block truncate text-sm font-semibold text-ink">
                     {ent?.name ?? ev.venue_name}
                   </span>
                 </span>
@@ -803,11 +803,11 @@ function FeaturedShowPreview({
       </div>
 
       {/* Right — setlist + sections */}
-      <div className="rounded-lg border border-white/5 bg-smoke/40 p-5">
+      <div className="rounded-lg border border-gray-200 bg-gray-50 p-5">
         <p className="font-mono text-[10px] uppercase tracking-widest text-croll">
           // INSIDE THE SHOW
         </p>
-        <p className="mt-2 text-sm leading-relaxed text-gray-300">
+        <p className="mt-2 text-sm leading-relaxed text-gray-600">
           Step through the night, song by song. Filter by where in the venue it was filmed.
         </p>
 
@@ -820,7 +820,7 @@ function FeaturedShowPreview({
                 <li
                   key={song + i}
                   className={`flex items-center gap-3 rounded px-2.5 py-1.5 text-sm ${
-                    isActive ? 'bg-croll/15 text-white' : 'text-gray-300'
+                    isActive ? 'bg-croll/15 text-ink' : 'text-gray-600'
                   }`}
                 >
                   <span className="w-6 shrink-0 font-mono text-[10px] tabular-nums text-gray-600">
@@ -839,7 +839,7 @@ function FeaturedShowPreview({
             })}
           </ol>
         ) : (
-          <p className="mt-5 rounded border border-white/5 bg-ink/40 p-4 text-xs text-gray-500">
+          <p className="mt-5 rounded border border-gray-200 bg-gray-100 p-4 text-xs text-gray-500">
             No setlist captured yet.
           </p>
         )}
@@ -853,8 +853,8 @@ function FeaturedShowPreview({
                 key={s}
                 className={`rounded-full border px-2.5 py-1 font-mono text-[10px] uppercase tracking-widest ${
                   present
-                    ? 'border-white/20 bg-white/10 text-white'
-                    : 'border-white/5 bg-white/5 text-gray-600'
+                    ? 'border-gray-300 bg-gray-200 text-ink'
+                    : 'border-gray-200 bg-gray-100 text-gray-400'
                 }`}
               >
                 {SECTION_LABELS[s]}

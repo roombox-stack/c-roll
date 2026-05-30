@@ -253,7 +253,7 @@ export default async function EntityPage({
   };
 
   return (
-    <div className="min-h-screen bg-ink text-white">
+    <div className="min-h-screen bg-white text-ink">
       <Nav />
 
       {/* ── Hero ────────────────────────────────────────────────────────── */}
@@ -384,9 +384,9 @@ export default async function EntityPage({
       </section>
 
       {/* ── Stats strip ─────────────────────────────────────────────────── */}
-      <div className="border-y border-white/5 bg-smoke/30">
+      <div className="border-y border-gray-100 bg-gray-50">
         <div className="mx-auto max-w-7xl overflow-x-auto px-4">
-          <div className="flex min-w-max items-stretch divide-x divide-white/5">
+          <div className="flex min-w-max items-stretch divide-x divide-gray-100">
             <StatChip label="CLIPS" value={formatCount(videoCount)} />
             <StatChip label="PHOTOS" value={formatCount(photoCount)} />
             <StatChip label={entity.type === 'team' ? 'GAMES COVERED' : 'SHOWS COVERED'} value={String(allEvents.length)} />
@@ -401,7 +401,7 @@ export default async function EntityPage({
         {/* ── Fan highlights ──────────────────────────────────────────── */}
         <section>
           <RedEyebrow>FAN HIGHLIGHTS</RedEyebrow>
-          <h2 className="mt-2 font-heading text-2xl font-bold text-white md:text-3xl">
+          <h2 className="mt-2 font-heading text-2xl font-bold text-ink md:text-3xl">
             The best moments, by the people who were there.
           </h2>
 
@@ -419,11 +419,11 @@ export default async function EntityPage({
           </div>
 
           {activeSong ? (
-            <p className="mt-3 text-sm text-gray-400">
+            <p className="mt-3 text-sm text-gray-600">
               Filtered to &ldquo;{activeSong}&rdquo; —{' '}
               <Link
                 href={`/${entity.slug}${activeFilter === 'best' ? '' : `?filter=${activeFilter}`}`}
-                className="text-white underline"
+                className="text-ink underline"
               >
                 clear
               </Link>
@@ -432,8 +432,8 @@ export default async function EntityPage({
 
           <div className="mt-6">
             {highlightsMedia.length === 0 ? (
-              <div className="rounded-xl border border-white/8 bg-white/[0.02] px-6 py-12 text-center">
-                <p className="font-mono text-[11px] uppercase tracking-widest text-gray-600">
+              <div className="rounded-xl border border-gray-200 bg-gray-50 px-6 py-12 text-center">
+                <p className="font-mono text-[11px] uppercase tracking-widest text-gray-500">
                   // NO FOOTAGE YET
                 </p>
                 <p className="mt-3 text-sm text-gray-500">
@@ -445,7 +445,7 @@ export default async function EntityPage({
                       ? `/${entity.slug}/${allEvents.find((ev) => ev.event_date >= todayISO)!.slug}`
                       : '/upload'
                   }
-                  className="mt-4 inline-flex items-center gap-2 rounded border border-white/15 px-4 py-2 text-sm text-white transition hover:bg-white/5"
+                  className="mt-4 inline-flex items-center gap-2 rounded border border-gray-300 px-4 py-2 text-sm text-ink transition hover:bg-gray-100"
                 >
                   Upload footage →
                 </Link>
@@ -460,13 +460,13 @@ export default async function EntityPage({
         {topSongs.length > 0 ? (
           <section>
             <RedEyebrow>{entity.type === 'team' ? 'MOST FILMED MOMENTS' : 'MOST FILMED SONGS'}</RedEyebrow>
-            <h2 className="mt-2 font-heading text-2xl font-bold text-white md:text-3xl">
+            <h2 className="mt-2 font-heading text-2xl font-bold text-ink md:text-3xl">
               {entity.type === 'team'
                 ? `The plays that broke phones across ${allEvents.length} ${allEvents.length === 1 ? 'game' : 'games'}.`
                 : `The ones that broke phones across ${allEvents.length} ${allEvents.length === 1 ? 'show' : 'shows'}.`}
             </h2>
 
-            <div className="mt-6 grid grid-cols-1 gap-px bg-white/5 md:grid-cols-5">
+            <div className="mt-6 grid grid-cols-1 gap-px bg-gray-200 md:grid-cols-5">
               {topSongs.map(([song, count], i) => (
                 <SongCard
                   key={song}
@@ -488,7 +488,7 @@ export default async function EntityPage({
             <div className="flex items-end justify-between gap-4">
               <div>
                 <RedEyebrow>{entity.type === 'team' ? 'RECENT GAMES' : 'RECENT SHOWS'}</RedEyebrow>
-                <h2 className="mt-2 font-heading text-2xl font-bold text-white md:text-3xl">
+                <h2 className="mt-2 font-heading text-2xl font-bold text-ink md:text-3xl">
                   {entity.type === 'team'
                     ? 'Latest games, freshest clips.'
                     : 'Latest nights, freshest uploads.'}
@@ -497,7 +497,7 @@ export default async function EntityPage({
               {allEvents.length > 4 ? (
                 <Link
                   href={`/${entity.slug}#archive`}
-                  className="shrink-0 text-sm text-gray-500 transition hover:text-white"
+                  className="shrink-0 text-sm text-gray-500 transition hover:text-ink"
                 >
                   All {allEvents.length} {entity.type === 'team' ? 'Games' : 'Shows'} →
                 </Link>
@@ -521,12 +521,12 @@ export default async function EntityPage({
 
       {/* ── Archive bar ─────────────────────────────────────────────────── */}
       {allEvents.length > 0 ? (
-        <section id="archive" className="border-t border-white/5 bg-smoke/40">
+        <section id="archive" className="border-t border-gray-100 bg-gray-50">
           <div className="mx-auto max-w-7xl px-4 py-16">
             <RedEyebrow>C·ROLL ARCHIVE</RedEyebrow>
             <div className="mt-4 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="font-heading text-3xl font-bold text-white md:text-4xl">
+                <p className="font-heading text-3xl font-bold text-ink md:text-4xl">
                   All {allEvents.length}{' '}
                   {entity.type === 'team'
                     ? allEvents.length === 1
@@ -698,7 +698,7 @@ function StatChip({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col items-start justify-center px-5 py-4">
       <span className="font-mono text-[9px] uppercase tracking-widest text-gray-600">{label}</span>
-      <span className="mt-0.5 font-heading text-lg font-bold tabular-nums text-white">{value}</span>
+      <span className="mt-0.5 font-heading text-lg font-bold tabular-nums text-ink">{value}</span>
     </div>
   );
 }
@@ -719,8 +719,8 @@ function FilterPill({
       href={href}
       className={`rounded-full border px-4 py-1.5 text-sm font-medium transition ${
         active
-          ? 'border-white bg-white text-ink'
-          : 'border-white/10 bg-white/5 text-gray-400 hover:border-white/20 hover:text-white'
+          ? 'border-ink bg-ink text-white'
+          : 'border-gray-200 bg-gray-100 text-gray-500 hover:border-gray-300 hover:text-ink'
       }`}
     >
       {children}
@@ -757,15 +757,15 @@ function SongCard({
   return (
     <Link
       href={href}
-      className="group block bg-smoke p-5 transition hover:bg-ash"
+      className="group block bg-gray-100 p-5 transition hover:bg-gray-200"
     >
       {/* Rank */}
-      <span className="font-display text-4xl font-black tabular-nums text-white/10 transition group-hover:text-white/20">
+      <span className="font-display text-4xl font-black tabular-nums text-ink/10 transition group-hover:text-ink/20">
         {String(rank).padStart(2, '0')}
       </span>
 
       {/* Song name */}
-      <p className="mt-3 truncate text-sm font-semibold text-white">{song}</p>
+      <p className="mt-3 truncate text-sm font-semibold text-ink">{song}</p>
       <p className="mt-0.5 font-mono text-[10px] uppercase tracking-wider text-gray-600">
         {formatCount(count)} clips
       </p>
@@ -816,7 +816,7 @@ function EventCard({
   return (
     <Link
       href={href}
-      className="group block rounded-xl border border-white/10 bg-white/[0.02] p-3 transition hover:border-white/25 hover:bg-white/[0.04]"
+      className="group block rounded-xl border border-gray-200 bg-gray-50 p-3 transition hover:border-gray-300 hover:bg-gray-100"
     >
       {/* Title block — pulled out above the image so a row of cards reads as a
           clean, scannable column of dates + venues. */}
@@ -831,7 +831,7 @@ function EventCard({
             </span>
           ) : null}
         </div>
-        <p className="mt-1 truncate font-heading text-base font-bold leading-tight text-white transition group-hover:text-croll md:text-lg">
+        <p className="mt-1 truncate font-heading text-base font-bold leading-tight text-ink transition group-hover:text-croll md:text-lg">
           {event.venue_name}
           {event.city ? `, ${event.city}` : ''}
         </p>
@@ -903,12 +903,12 @@ function ArchiveList({ events, entitySlug }: { events: EventRow[]; entitySlug: s
               <li key={ev.id}>
                 <Link
                   href={`/${entitySlug}/${ev.slug}`}
-                  className="flex items-center justify-between rounded px-2 py-2 transition hover:bg-white/5"
+                  className="flex items-center justify-between rounded px-2 py-2 transition hover:bg-gray-50"
                 >
                   <span className="min-w-0 flex-1 text-sm">
                     <span className="text-gray-600">{formatEventDate(ev.event_date)}</span>
                     <span className="mx-1.5 text-ash">·</span>
-                    <span className="text-white">{ev.venue_name}</span>
+                    <span className="text-ink">{ev.venue_name}</span>
                     <span className="text-gray-500">
                       {ev.city ? `, ${ev.city}` : ''}
                       {ev.state ? `, ${ev.state}` : ''}

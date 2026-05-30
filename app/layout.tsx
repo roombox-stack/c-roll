@@ -48,8 +48,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`bg-ink ${inter.variable} ${archivoBlack.variable} ${bricolage.variable}`}>
-      <body className="min-h-screen bg-ink font-sans text-white antialiased">{children}</body>
+    <html lang="en" className={`bg-white ${inter.variable} ${archivoBlack.variable} ${bricolage.variable}`}>
+      <body className="min-h-screen bg-white font-sans text-ink antialiased">{children}</body>
     </html>
   );
 }
