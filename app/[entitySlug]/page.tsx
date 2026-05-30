@@ -657,15 +657,6 @@ function HeroThumb({ media }: { media: MediaRow | null }) {
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/10" />
 
-      {/* Section badge top-left — matches the event Browse tab style */}
-      {media.section_tag && HERO_SECTION_LABELS[media.section_tag] ? (
-        <span
-          className="absolute left-2 top-2 rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold tracking-widest"
-          style={{ backgroundColor: 'rgba(255,204,0,0.15)', color: '#FFCC00' }}
-        >
-          {HERO_SECTION_LABELS[media.section_tag]}
-        </span>
-      ) : null}
 
       {isVideo ? (
         <div className="absolute inset-0 flex items-center justify-center opacity-0 transition group-hover:opacity-100">
