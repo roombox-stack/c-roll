@@ -595,8 +595,8 @@ function CalendarBucket({
   mediaMap?: Map<string, { clipCount: number; contribs: Set<string>; latest: string }>;
 }) {
   return (
-    <div className="grid grid-cols-[120px_1fr] gap-4 py-5 md:grid-cols-[140px_1fr]">
-      <div className="pt-0.5">
+    <div className="py-5 md:grid md:grid-cols-[140px_1fr] md:gap-4">
+      <div className="mb-3 pt-0.5 md:mb-0">
         <p className="font-heading text-sm font-semibold text-white">{label}</p>
         <p className="mt-0.5 font-mono text-[10px] uppercase tracking-widest text-gray-600">
           {sublabel}
