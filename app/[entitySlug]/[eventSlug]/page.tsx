@@ -9,6 +9,7 @@
 // hands the array to <EventBrowse /> which handles filter/sort/expand state.
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -41,7 +42,7 @@ interface EventRow {
   upload_count: number;
   photo_count: number;
   video_count: number;
-  entity: { id: string; slug: string; name: string } | { id: string; slug: string; name: string }[] | null;
+  entity: { id: string; slug: string; name: string; hero_image_url: string | null } | { id: string; slug: string; name: string; hero_image_url: string | null }[] | null;
 }
 
 type EventMedia = EventBrowseMedia & { upload_session: string | null };
@@ -51,7 +52,7 @@ async function fetchEvent(eventSlug: string): Promise<EventRow | null> {
   const { data } = await supabase
     .from('events')
     .select(
-      'id, entity_id, slug, name, venue_name, city, state, event_date, tour_name, setlist, upload_count, photo_count, video_count, entity:entities(id, slug, name)',
+      'id, entity_id, slug, name, venue_name, city, state, event_date, tour_name, setlist, upload_count, photo_count, video_count, entity:entities(id, slug, name, hero_image_url)',
     )
     .eq('slug', eventSlug)
     .eq('hidden', false)
@@ -167,6 +168,22 @@ export default async function EventPage({
 
           {/* Title block (left) + stats (right) */}
           <div className="mt-3 grid items-start gap-x-8 gap-y-5 lg:grid-cols-[1fr_auto]">
+            <div className="flex min-w-0 items-start gap-4">
+              {/* Entity hero thumbnail */}
+              {entity.hero_image_url ? (
+                <Link href={`/${entity.slug}`} className="shrink-0">
+                  <div className="relative h-14 w-14 overflow-hidden rounded-lg bg-smoke md:h-16 md:w-16">
+                    <Image
+                      src={entity.hero_image_url}
+                      alt={entity.name}
+                      fill
+                      sizes="64px"
+                      className="object-cover"
+                      unoptimized
+                    />
+                  </div>
+                </Link>
+              ) : null}
             <div className="min-w-0">
               {/* Eyebrow — tour name if set, else entity name */}
               <p className="font-mono text-[10px] font-semibold uppercase tracking-widest text-croll">
@@ -199,6 +216,7 @@ export default async function EventPage({
                   {event.city}{event.state ? `, ${event.state}` : ''}
                 </span>
               </div>
+            </div>
             </div>
 
             {/* Stats row — desktop: top-right with button inside Attendance col */}
