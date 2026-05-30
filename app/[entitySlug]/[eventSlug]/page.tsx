@@ -44,7 +44,7 @@ interface EventRow {
   entity: { id: string; slug: string; name: string } | { id: string; slug: string; name: string }[] | null;
 }
 
-type EventMedia = EventBrowseMedia;
+type EventMedia = EventBrowseMedia & { upload_session: string | null };
 
 async function fetchEvent(eventSlug: string): Promise<EventRow | null> {
   const supabase = createAdminClient();

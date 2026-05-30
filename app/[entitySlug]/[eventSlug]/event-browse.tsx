@@ -36,7 +36,6 @@ export interface EventBrowseMedia {
   like_count: number;
   is_full_song: boolean;
   uploader_id: string | null;
-  upload_session: string | null;
   created_at: string;
 }
 
@@ -76,11 +75,6 @@ function cleanLabel(s: string | null | undefined): string | null {
   return s.trim();
 }
 
-function handleFor(m: EventBrowseMedia): string {
-  if (m.uploader_id) return `@${m.uploader_id.slice(0, 8)}`;
-  if (m.upload_session) return `@anon ${m.upload_session.slice(0, 6)}`;
-  return '@anon';
-}
 
 export function EventBrowse({
   media,
@@ -812,9 +806,7 @@ function VideoFullscreenOverlay({
           ) : null}
         </div>
         <div className="flex items-center justify-between gap-3">
-          <span className="truncate font-mono text-xs text-gray-400">
-            {handleFor(media)}
-            <span className="mx-1.5 text-gray-600">·</span>
+          <span className="font-mono text-xs text-gray-400">
             {formatCount(media.view_count)} views
           </span>
           <div className="flex items-center gap-2">
@@ -936,15 +928,6 @@ function MosaicTile({
         </span>
       ) : null}
 
-      {/* Bottom bar — hover only (desktop), always visible (mobile) */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-gradient-to-t from-black/80 to-transparent px-2 py-1.5 opacity-0 transition group-hover:opacity-100 md:opacity-0">
-        <span className="truncate font-mono text-[10px] text-white/80">
-          {handleFor(media)}
-        </span>
-        <span className="font-mono text-[10px] tabular-nums text-white/80">
-          {formatCount(media.view_count)} views
-        </span>
-      </div>
     </button>
   );
 }
@@ -1026,9 +1009,7 @@ function ExpandedCard({
           ) : null}
 
           <div className="mt-auto flex items-center justify-between gap-3 border-t border-white/5 pt-3">
-            <span className="truncate font-mono text-xs text-gray-400">
-              {handleFor(media)}
-              <span className="mx-1.5 text-ash">·</span>
+            <span className="font-mono text-xs text-gray-400">
               {formatCount(media.view_count)} views
             </span>
             <div className="flex items-center gap-2">
