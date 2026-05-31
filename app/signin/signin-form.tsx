@@ -60,7 +60,12 @@ export function SigninForm({ next }: { next?: string }) {
         />
       </label>
       <label className="block space-y-1">
-        <span className="text-sm text-gray-400">Password</span>
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-gray-400">Password</span>
+          <a href="/forgot-password" className="text-xs text-gray-400 underline hover:text-white">
+            Forgot password?
+          </a>
+        </div>
         <input
           type="password"
           name="password"
