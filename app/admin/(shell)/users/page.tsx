@@ -10,10 +10,17 @@ const ROLE_BADGES: Record<string, string> = {
 
 export default async function UsersPage() {
   const supabase = createAdminClient();
-  const { data: users } = await supabase
-    .from('users')
-    .select('id, username, display_name, created_at, upload_count, role')
-    .order('created_at', { ascending: false });
+  const [{ data: users }, { data: authData }] = await Promise.all([
+    supabase
+      .from('users')
+      .select('id, username, display_name, created_at, upload_count, role')
+      .order('created_at', { ascending: false }),
+    supabase.auth.admin.listUsers({ perPage: 1000 }),
+  ]);
+
+  const emailById = Object.fromEntries(
+    (authData?.users ?? []).map((u) => [u.id, u.email ?? '—']),
+  );
 
   const rows = users ?? [];
 
@@ -30,6 +37,7 @@ export default async function UsersPage() {
               <tr>
                 <th className="px-4 py-2">User</th>
                 <th className="px-4 py-2">Username</th>
+                <th className="px-4 py-2">Email</th>
                 <th className="px-4 py-2">Role</th>
                 <th className="px-4 py-2">Joined</th>
                 <th className="px-4 py-2 text-right">Uploads</th>
@@ -45,6 +53,7 @@ export default async function UsersPage() {
                       <div className="text-xs text-gray-500">{u.id}</div>
                     </td>
                     <td className="px-4 py-2 text-gray-400">{u.username ?? '—'}</td>
+                    <td className="px-4 py-2 text-gray-400">{emailById[u.id] ?? '—'}</td>
                     <td className="px-4 py-2">
                       <span className={`rounded px-2 py-0.5 text-xs font-medium ${ROLE_BADGES[role] ?? ROLE_BADGES.user}`}>
                         {role}
