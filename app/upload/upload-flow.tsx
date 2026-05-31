@@ -529,7 +529,7 @@ function FilesStep({
             onClick={() => inputRef.current?.click()}
             className="mt-5 inline-flex items-center rounded-full bg-croll px-6 py-2 text-sm font-semibold text-ink transition hover:brightness-110"
           >
-            Choose files
+            ↑ Upload to this show
           </button>
         </div>
       ) : (
