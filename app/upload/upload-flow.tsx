@@ -630,6 +630,7 @@ function FileThumb({ file, onRemove }: { file: PendingFile; onRemove: () => void
           src={file.previewUrl}
           muted
           playsInline
+          preload="metadata"
           className="h-full w-full object-cover"
         />
       ) : (
@@ -770,7 +771,7 @@ function UploadProgress({
           >
             <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded">
               {f.file.type.startsWith('video/') ? (
-                <video src={f.previewUrl} muted className="h-full w-full object-cover" />
+                <video src={f.previewUrl} muted preload="metadata" className="h-full w-full object-cover" />
               ) : (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={f.previewUrl} alt="" className="h-full w-full object-cover" />
