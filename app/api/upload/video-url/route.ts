@@ -16,6 +16,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createDirectUpload } from '@/lib/mux';
 import { isValidSessionToken } from '@/lib/session';
+import { getCurrentUser } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
   let body: { eventId?: unknown; sessionToken?: unknown; filename?: unknown };
@@ -36,6 +37,7 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = createAdminClient();
+  const currentUser = await getCurrentUser();
 
   const { data: event, error: eventErr } = await supabase
     .from('events')
@@ -69,6 +71,7 @@ export async function POST(req: NextRequest) {
       file_type: 'video',
       storage_url: '', // populated by the Mux webhook with the HLS URL
       mux_upload_id: mux.uploadId,
+      uploader_id: currentUser?.id ?? null,
       upload_session: (sessionToken as string | undefined) ?? null,
       status: 'uploading',
     })
