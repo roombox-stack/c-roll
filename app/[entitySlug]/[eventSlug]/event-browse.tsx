@@ -1235,9 +1235,11 @@ function MobileTile({
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onTagClick(); }}
-          className="absolute left-1 top-1 text-[9px] text-white/35 transition hover:text-white/60"
+          className="absolute left-1 top-1 flex items-center gap-1 rounded bg-black/70 px-1 py-0.5 font-mono text-[9px] text-white/60 transition hover:text-white/90"
         >
-          Tag →
+          <span style={{ color: '#FFCC00' }}>♪</span>
+          Tag
+          <span style={{ color: '#FFCC00' }}>→</span>
         </button>
       ) : null}
     </button>
@@ -1310,9 +1312,11 @@ function MosaicTile({
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onTagClick(); }}
-          className="absolute bottom-2 left-2 text-[10px] text-white/40 transition hover:text-white/70"
+          className="absolute bottom-2 left-2 flex items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-white/60 backdrop-blur transition hover:bg-white/20 hover:text-white/90"
         >
-          Tag song →
+          <span style={{ color: '#FFCC00' }}>♪</span>
+          Tag song
+          <span style={{ color: '#FFCC00' }}>→</span>
         </button>
       ) : null}
 
