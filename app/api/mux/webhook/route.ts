@@ -20,6 +20,56 @@ import crypto from 'crypto';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { MUX_WEBHOOK_SECRET, muxThumbnailUrl } from '@/lib/mux';
 
+function normalize(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+}
+
+async function autoTagFromAudd(mediaId: string, playbackId: string, eventId: string) {
+  const token = process.env.AUDD_API_TOKEN;
+  if (!token) return;
+
+  const supabase = createAdminClient();
+
+  // Fetch event setlist
+  const { data: event } = await supabase
+    .from('events')
+    .select('setlist')
+    .eq('id', eventId)
+    .single();
+
+  const setlist: string[] = event?.setlist ?? [];
+  if (setlist.length === 0) return;
+
+  // Call AudD
+  const form = new FormData();
+  form.append('api_token', token);
+  form.append('url', `https://stream.mux.com/${playbackId}/audio.m4a`);
+  form.append('return', 'timecode');
+
+  const res = await fetch('https://api.audd.io/', { method: 'POST', body: form });
+  if (!res.ok) return;
+
+  const json = await res.json() as { status?: string; result?: { title?: string } };
+  if (json.status !== 'success' || !json.result?.title) return;
+
+  const detectedNorm = normalize(json.result.title);
+  const match = setlist.find((song) => normalize(song) === detectedNorm);
+  if (!match) return;
+
+  // Only write if song_tag is null and source is not manual
+  await supabase
+    .from('media')
+    .update({ song_tag: match, song_tag_source: 'auto' })
+    .eq('id', mediaId)
+    .is('song_tag', null);
+}
+
+function fireAndForget(mediaId: string, playbackId: string, eventId: string) {
+  autoTagFromAudd(mediaId, playbackId, eventId).catch((err: unknown) => {
+    console.error('[audd] auto-tag failed', err);
+  });
+}
+
 // Webhook handlers must read the raw bytes. Disable static optimization.
 export const dynamic = 'force-dynamic';
 
@@ -101,7 +151,7 @@ export async function POST(req: NextRequest) {
     // complete song (verses + chorus arc). Mux reports duration in seconds.
     const isFullSong = typeof duration === 'number' && duration >= 150;
 
-    const { error } = await supabase
+    const { data: updatedRows, error } = await supabase
       .from('media')
       .update({
         mux_asset_id: assetId,
@@ -112,11 +162,17 @@ export async function POST(req: NextRequest) {
         is_full_song: isFullSong,
         status: 'active',
       })
-      .eq('mux_upload_id', uploadId);
+      .eq('mux_upload_id', uploadId)
+      .select('id, event_id');
 
     if (error) {
       // Surface as 500 so Mux retries.
       return NextResponse.json({ error: 'failed to update media' }, { status: 500 });
+    }
+
+    const row = updatedRows?.[0];
+    if (row?.id && row?.event_id) {
+      fireAndForget(row.id as string, playbackId, row.event_id as string);
     }
   } else if (type === 'video.asset.errored') {
     const uploadId = data.upload_id;
