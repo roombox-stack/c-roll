@@ -1264,7 +1264,7 @@ function MosaicTile({
   const isVideo = media.file_type === 'video';
   const thumb = media.thumbnail_url ?? (isVideo ? null : media.storage_url);
   const song = songOverride ? songOverride : cleanLabel(media.song_tag);
-  const aspect = isVideo ? 'aspect-video' : 'aspect-[4/5]';
+  const aspect = 'aspect-[3/4]';
 
   return (
     <button
