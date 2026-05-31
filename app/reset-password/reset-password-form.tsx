@@ -12,6 +12,16 @@ export function ResetPasswordForm() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Check for error params Supabase puts in the hash (e.g. otp_expired)
+    const hash = window.location.hash.slice(1);
+    const params = new URLSearchParams(hash);
+    const errCode = params.get('error_code');
+    if (errCode) {
+      const desc = params.get('error_description')?.replace(/\+/g, ' ') ?? 'Invalid or expired reset link.';
+      setError(desc);
+      return;
+    }
+
     const supabase = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -65,8 +75,19 @@ export function ResetPasswordForm() {
     );
   }
 
-  if (!ready) {
+  if (!ready && !error) {
     return <p className="text-sm text-gray-400">Verifying your reset link…</p>;
+  }
+
+  if (error && !ready) {
+    return (
+      <div className="space-y-4">
+        <p className="rounded bg-red-900/40 px-3 py-2 text-sm text-red-300">{error}</p>
+        <a href="/forgot-password" className="block text-sm text-white underline">
+          Request a new reset link
+        </a>
+      </div>
+    );
   }
 
   return (
