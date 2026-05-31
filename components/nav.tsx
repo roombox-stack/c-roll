@@ -18,23 +18,19 @@ interface SessionView {
 
 async function getSessionView(): Promise<SessionView | null> {
   const supabase = createClient();
-  const { data } = await supabase.auth.getUser();
-  const user = data.user;
+  const { data: authData } = await supabase.auth.getUser();
+  const user = authData.user;
   if (!user) return null;
-  const metadata = (user.user_metadata ?? {}) as {
-    username?: unknown;
-    display_name?: unknown;
-  };
-  const username =
-    typeof metadata.username === 'string' && metadata.username.trim()
-      ? metadata.username
-      : null;
-  if (!username) return null;
-  const displayName =
-    typeof metadata.display_name === 'string' && metadata.display_name.trim()
-      ? metadata.display_name
-      : null;
-  return { username, displayName };
+
+  // Read from public.users so username/display_name changes are reflected immediately.
+  const { data: profile } = await supabase
+    .from('users')
+    .select('username, display_name')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  if (!profile?.username) return null;
+  return { username: profile.username, displayName: profile.display_name ?? null };
 }
 
 function initialsFor(s: string): string {
