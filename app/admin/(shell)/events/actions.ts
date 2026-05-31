@@ -122,3 +122,11 @@ export async function updateEvent(id: string, formData: FormData) {
   // Redirect back with a changing token so the page shows a "saved" toast.
   redirect(`/admin/events/${id}?saved=${Date.now()}`);
 }
+
+export async function deleteEvent(id: string) {
+  const supabase = createAdminClient();
+  const { error } = await supabase.from('events').delete().eq('id', id);
+  if (error) throw new Error(error.message);
+  revalidatePath('/admin/events');
+  redirect('/admin/events');
+}

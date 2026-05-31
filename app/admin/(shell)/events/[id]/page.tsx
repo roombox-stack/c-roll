@@ -8,6 +8,7 @@ import { DateField } from '@/components/admin/date-field';
 import { BulkSongTagger, type TaggableMedia } from '@/components/admin/bulk-song-tagger';
 import { updateEvent } from '../actions';
 import { SavedToast } from '@/components/admin/saved-toast';
+import { DangerZone } from './danger-zone';
 
 export const dynamic = 'force-dynamic';
 
@@ -149,6 +150,9 @@ export default async function EditEventPage({
           </div>
         </aside>
       </div>
+
+      {/* ── Danger zone ───────────────────────────────────────────────── */}
+      <DangerZone eventId={event.id} eventName={event.name} />
 
       {/* ── Tag Media ─────────────────────────────────────────────────── */}
       <section className="space-y-3">
