@@ -9,7 +9,7 @@
 // All filtering / sorting is client-side against the pre-fetched `media` prop.
 // No re-fetches on filter change.
 
-import { useMemo, useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { BLUR_DATA_URL } from '@/lib/blur-placeholder';
 import { CardLikeButton } from '@/components/card-like-button';
@@ -30,6 +30,7 @@ export interface EventBrowseMedia {
   mux_playback_id: string | null;
   duration_sec: number | null;
   song_tag: string | null;
+  song_tag_source: string | null;
   section_tag: SectionTag | null;
   caption: string | null;
   view_count: number;
@@ -80,9 +81,13 @@ function cleanLabel(s: string | null | undefined): string | null {
 export function EventBrowse({
   media,
   setlist,
+  eventName,
+  eventDate,
 }: {
   media: EventBrowseMedia[];
   setlist: string[];
+  eventName: string;
+  eventDate: string;
 }) {
   const [selectedSong, setSelectedSong] = useState<string | null>(null);
   const [selectedSections, setSelectedSections] = useState<Set<SectionTag>>(
@@ -94,6 +99,12 @@ export function EventBrowse({
   const [fullscreenId, setFullscreenId] = useState<string | null>(null);
   const [openSheet, setOpenSheet] = useState<SheetKey>(null);
   const savedScrollY = useRef(0);
+
+  // Community song tagging state
+  const [tagMediaId, setTagMediaId] = useState<string | null>(null);
+  // Optimistic overrides: mediaId → song_tag
+  const [tagOverrides, setTagOverrides] = useState<Map<string, string>>(() => new Map());
+  const [tagError, setTagError] = useState<string | null>(null);
 
   // Lock body scroll while fullscreen overlay or bottom sheet is open.
   useEffect(() => {
@@ -208,6 +219,30 @@ export function EventBrowse({
   const videoList = useMemo(() => filtered.filter((m) => m.file_type === 'video'), [filtered]);
   const fullscreenIdx = fullscreenId ? videoList.findIndex((m) => m.id === fullscreenId) : -1;
 
+  const submitTag = useCallback(async (mediaId: string, song: string) => {
+    setTagMediaId(null);
+    // Optimistic update immediately
+    setTagOverrides((prev) => new Map(prev).set(mediaId, song));
+    try {
+      const { getOrCreateClientSessionToken } = await import('@/lib/session');
+      const sessionToken = getOrCreateClientSessionToken();
+      const res = await fetch(`/api/media/${mediaId}/tag`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ song_tag: song, session_token: sessionToken }),
+      });
+      if (!res.ok && res.status !== 409) {
+        setTagOverrides((prev) => { const m = new Map(prev); m.delete(mediaId); return m; });
+        setTagError("Couldn't save tag, try again");
+        setTimeout(() => setTagError(null), 3000);
+      }
+    } catch {
+      setTagOverrides((prev) => { const m = new Map(prev); m.delete(mediaId); return m; });
+      setTagError("Couldn't save tag, try again");
+      setTimeout(() => setTagError(null), 3000);
+    }
+  }, []);
+
   function toggleSection(s: SectionTag) {
     setSelectedSections((prev) => {
       const next = new Set(prev);
@@ -235,6 +270,24 @@ export function EventBrowse({
 
   return (
     <>
+    {/* ── Tag song popover ────────────────────────────────────────────── */}
+    {tagMediaId && cleanSetlist.length > 0 ? (
+      <TagSongPopover
+        setlist={cleanSetlist}
+        eventName={eventName}
+        eventDate={eventDate}
+        onSelect={(song) => submitTag(tagMediaId, song)}
+        onClose={() => setTagMediaId(null)}
+      />
+    ) : null}
+
+    {/* ── Tag error toast ──────────────────────────────────────────────── */}
+    {tagError ? (
+      <div className="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-[#1a1a1a] px-4 py-2 text-sm text-white shadow-lg ring-1 ring-white/10">
+        {tagError}
+      </div>
+    ) : null}
+
     {/* ── Mobile video fullscreen overlay ─────────────────────────────── */}
     {fullscreenMedia ? (
       <VideoFullscreenOverlay
@@ -420,6 +473,9 @@ export function EventBrowse({
                   <MobileTile
                     key={m.id}
                     media={m}
+                    songOverride={tagOverrides.get(m.id)}
+                    canTag={cleanSetlist.length > 0}
+                    onTagClick={() => setTagMediaId(m.id)}
                     onClick={() => {
                       if (m.file_type === 'video') {
                         setFullscreenId(m.id);
@@ -450,6 +506,9 @@ export function EventBrowse({
                   <MosaicTile
                     key={m.id}
                     media={m}
+                    songOverride={tagOverrides.get(m.id)}
+                    canTag={cleanSetlist.length > 0}
+                    onTagClick={() => setTagMediaId(m.id)}
                     onClick={() => setExpandedId(m.id)}
                   />
                 );
@@ -751,6 +810,87 @@ function CheckIcon() {
   );
 }
 
+// ── Tag song popover ─────────────────────────────────────────────────────────
+
+function TagSongPopover({
+  setlist,
+  eventName,
+  eventDate,
+  onSelect,
+  onClose,
+}: {
+  setlist: string[];
+  eventName: string;
+  eventDate: string;
+  onSelect: (song: string) => void;
+  onClose: () => void;
+}) {
+  const formattedDate = useMemo(() => {
+    try {
+      return new Date(eventDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    } catch {
+      return eventDate;
+    }
+  }, [eventDate]);
+
+  // Close on Escape
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  return (
+    // Backdrop — closes on outside tap
+    <div
+      className="fixed inset-0 z-40 flex items-end justify-center md:items-center"
+      onClick={onClose}
+    >
+      {/* Dim backdrop */}
+      <div className="absolute inset-0 bg-black/60" aria-hidden />
+
+      {/* Sheet / popover */}
+      <div
+        className="relative z-10 w-full max-w-sm rounded-t-2xl bg-[#141414] ring-1 ring-white/10 md:rounded-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="border-b border-white/[0.08] px-4 py-3">
+          <p className="text-sm font-medium text-white">{eventName}</p>
+          <p className="mt-0.5 font-mono text-[11px] text-gray-400">{formattedDate}</p>
+        </div>
+
+        {/* Song list */}
+        <ul className="max-h-72 overflow-y-auto overscroll-contain divide-y divide-white/[0.06] pb-safe-or-4">
+          {setlist.map((song, i) => (
+            <li key={`${song}-${i}`}>
+              <button
+                type="button"
+                onClick={() => onSelect(song)}
+                className="flex w-full items-center gap-3 px-4 py-3 text-left transition active:bg-white/5 hover:bg-white/5"
+              >
+                <span className="w-5 shrink-0 font-mono text-[10px] text-gray-500 tabular-nums text-right">{i + 1}</span>
+                <span className="text-sm text-gray-100">{song}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+
+        {/* Cancel */}
+        <div className="border-t border-white/[0.08]">
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full py-3.5 text-sm text-gray-400 transition hover:text-white"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Setlist list (desktop) ──────────────────────────────────────────────────
 
 function SetlistList({
@@ -1037,9 +1177,15 @@ function VideoFullscreenOverlay({
 function MobileTile({
   media,
   onClick,
+  songOverride,
+  onTagClick,
+  canTag,
 }: {
   media: EventBrowseMedia;
   onClick: () => void;
+  songOverride?: string;
+  onTagClick?: () => void;
+  canTag?: boolean;
 }) {
   const isVideo = media.file_type === 'video';
   const thumb = media.thumbnail_url ?? (isVideo ? null : media.storage_url);
@@ -1079,6 +1225,21 @@ function MobileTile({
           {formatDuration(media.duration_sec)}
         </span>
       ) : null}
+
+      {/* Song tag or tag affordance — top-left overlay */}
+      {(songOverride ?? media.song_tag) ? (
+        <span className="absolute left-1 top-1 max-w-[80%] truncate rounded-full bg-white/10 px-1.5 py-0.5 text-[9px] text-white/70 backdrop-blur">
+          {songOverride ?? media.song_tag}
+        </span>
+      ) : canTag && onTagClick ? (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onTagClick(); }}
+          className="absolute left-1 top-1 text-[9px] text-white/35 transition hover:text-white/60"
+        >
+          Tag →
+        </button>
+      ) : null}
     </button>
   );
 }
@@ -1088,13 +1249,19 @@ function MobileTile({
 function MosaicTile({
   media,
   onClick,
+  songOverride,
+  onTagClick,
+  canTag,
 }: {
   media: EventBrowseMedia;
   onClick: () => void;
+  songOverride?: string;
+  onTagClick?: () => void;
+  canTag?: boolean;
 }) {
   const isVideo = media.file_type === 'video';
   const thumb = media.thumbnail_url ?? (isVideo ? null : media.storage_url);
-  const song = cleanLabel(media.song_tag);
+  const song = songOverride ? songOverride : cleanLabel(media.song_tag);
   const aspect = isVideo ? 'aspect-video' : 'aspect-[4/5]';
 
   return (
@@ -1134,11 +1301,19 @@ function MosaicTile({
         </span>
       ) : null}
 
-      {/* Song tag bottom-left */}
+      {/* Song tag or tag affordance bottom-left */}
       {song ? (
         <span className="absolute bottom-2 left-2 max-w-[80%] truncate rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-white/80 backdrop-blur">
           {song}
         </span>
+      ) : canTag && onTagClick ? (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onTagClick(); }}
+          className="absolute bottom-2 left-2 text-[10px] text-white/40 transition hover:text-white/70"
+        >
+          Tag song →
+        </button>
       ) : null}
 
     </button>
