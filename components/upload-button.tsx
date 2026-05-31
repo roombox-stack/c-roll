@@ -15,7 +15,7 @@ export function UploadButton({ eventSlug }: { eventSlug?: string }) {
           href={href}
           className="block w-full rounded-full bg-white py-3 text-center text-sm font-medium text-ink hover:bg-gray-200"
         >
-          Upload your photos &amp; videos
+          ↑ Upload to this show
         </Link>
       </div>
 
@@ -24,7 +24,7 @@ export function UploadButton({ eventSlug }: { eventSlug?: string }) {
         href={href}
         className="fixed bottom-6 right-6 z-30 hidden rounded-full bg-white px-5 py-3 text-sm font-medium text-ink shadow-lg hover:bg-gray-200 md:inline-flex"
       >
-        Upload your photos &amp; videos
+        ↑ Upload to this show
       </Link>
     </>
   );
