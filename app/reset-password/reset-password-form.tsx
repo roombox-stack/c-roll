@@ -26,11 +26,18 @@ export function ResetPasswordForm() {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     );
+
+    // If the hash already contains an access_token with type=recovery,
+    // the client will exchange it and fire PASSWORD_RECOVERY — but we also
+    // need to call getSession() to trigger that exchange on initial load.
     supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
         setReady(true);
       }
     });
+
+    // Kick off the session exchange so the event fires
+    supabase.auth.getSession();
   }, []);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
