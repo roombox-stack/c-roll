@@ -179,6 +179,7 @@ export function UploadFlow({ initialEvent }: { initialEvent: EventOption | null 
           files={files}
           onAdd={addFiles}
           onRemove={removeFile}
+          onBack={() => setStep('pick')}
           onNext={() => setStep('tag')}
         />
       ) : null}
@@ -187,6 +188,7 @@ export function UploadFlow({ initialEvent }: { initialEvent: EventOption | null 
         <TagStep
           sectionTag={sectionTag}
           onPick={setSectionTag}
+          onBack={() => setStep('files')}
           onContinue={() => {
             void startUploads();
           }}
@@ -444,11 +446,13 @@ function FilesStep({
   files,
   onAdd,
   onRemove,
+  onBack,
   onNext,
 }: {
   files: PendingFile[];
   onAdd: (files: FileList | File[]) => void;
   onRemove: (id: string) => void;
+  onBack: () => void;
   onNext: () => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -485,6 +489,14 @@ function FilesStep({
 
   return (
     <section className="space-y-4">
+      <button
+        type="button"
+        onClick={onBack}
+        className="flex items-center gap-1 text-sm text-gray-400 hover:text-white"
+      >
+        ← Back
+      </button>
+
       {/* Hidden input — multiple lets the OS file picker do multi-select natively */}
       <input
         ref={inputRef}
@@ -670,14 +682,24 @@ function FileThumb({ file, onRemove }: { file: PendingFile; onRemove: () => void
 function TagStep({
   sectionTag,
   onPick,
+  onBack,
   onContinue,
 }: {
   sectionTag: SectionTag | null;
   onPick: (s: SectionTag | null) => void;
+  onBack: () => void;
   onContinue: () => void;
 }) {
   return (
     <section className="space-y-5">
+      <button
+        type="button"
+        onClick={onBack}
+        className="flex items-center gap-1 text-sm text-gray-400 hover:text-white"
+      >
+        ← Back
+      </button>
+
       <div>
         <h2 className="text-xl font-semibold">Where were you?</h2>
         <p className="text-sm text-gray-400">Optional — helps fans find your view.</p>
