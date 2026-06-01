@@ -153,7 +153,7 @@ export function UploadFlow({ initialEvent }: { initialEvent: EventOption | null 
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <StepIndicator step={step} />
+      <StepIndicator step={step} preselected={!!initialEvent} />
 
       {event && step !== 'pick' && step !== 'done' ? (
         <SelectedEventChip event={event} onClear={() => setStep('pick')} />
@@ -179,7 +179,7 @@ export function UploadFlow({ initialEvent }: { initialEvent: EventOption | null 
           files={files}
           onAdd={addFiles}
           onRemove={removeFile}
-          onBack={() => setStep('pick')}
+          onBack={initialEvent ? null : () => setStep('pick')}
           onNext={() => setStep('tag')}
         />
       ) : null}
@@ -452,7 +452,7 @@ function FilesStep({
   files: PendingFile[];
   onAdd: (files: FileList | File[]) => void;
   onRemove: (id: string) => void;
-  onBack: () => void;
+  onBack: (() => void) | null;
   onNext: () => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -489,13 +489,15 @@ function FilesStep({
 
   return (
     <section className="space-y-4">
-      <button
-        type="button"
-        onClick={onBack}
-        className="flex items-center gap-1 text-sm text-gray-400 hover:text-white"
-      >
-        ← Back
-      </button>
+      {onBack ? (
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex items-center gap-1 text-sm text-gray-400 hover:text-white"
+        >
+          ← Back
+        </button>
+      ) : null}
 
       {/* Hidden input — multiple lets the OS file picker do multi-select natively */}
       <input
@@ -1048,13 +1050,13 @@ function putWithProgress(
 
 // ── Tiny UI bits ─────────────────────────────────────────────────────────────
 
-function StepIndicator({ step }: { step: Step }) {
-  const stepIndex = (
-    { pick: 1, files: 2, tag: 3, upload: 4, done: 4 } as Record<Step, number>
-  )[step];
+function StepIndicator({ step, preselected }: { step: Step; preselected: boolean }) {
+  const fullIndex = ({ pick: 1, files: 2, tag: 3, upload: 4, done: 4 } as Record<Step, number>)[step];
+  const stepIndex = preselected ? fullIndex - 1 : fullIndex;
+  const total = preselected ? 3 : 4;
   return (
     <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-gray-500">
-      <span>Step {stepIndex} of 4</span>
+      <span>Step {stepIndex} of {total}</span>
       <div className="h-px flex-1 bg-ash" />
     </div>
   );
