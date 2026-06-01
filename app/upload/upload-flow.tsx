@@ -683,7 +683,7 @@ function TagStep({
         <p className="text-sm text-gray-400">Optional — helps fans find your view.</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3">
         {UPLOAD_SECTION_OPTIONS.map((opt) => {
           const active = sectionTag === opt;
           return (

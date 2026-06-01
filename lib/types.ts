@@ -104,9 +104,9 @@ export interface Follow {
 // UI-facing labels for section_tag values.
 export const SECTION_LABELS: Record<SectionTag, string> = {
   floor: 'Floor / Pit',
-  section_100: 'Section 100s',
+  section_100: 'Lower Bowl',
   section_200: 'Section 200s',
-  upper: 'Upper deck',
+  upper: 'Upper Deck',
   stage_left: 'Stage left',
   stage_right: 'Stage right',
   pit: 'Pit',
@@ -121,7 +121,7 @@ export const SECTION_LABELS: Record<SectionTag, string> = {
 // in "100s"/"200s" stays lowercase — apply them as-is, do not add `uppercase`.
 export const SECTION_BADGE_LABELS: Record<SectionTag, string> = {
   floor: 'FLOOR / PIT',
-  section_100: 'SECTION 100s',
+  section_100: 'LOWER BOWL',
   section_200: 'SECTION 200s',
   upper: 'UPPER DECK',
   stage_left: 'STAGE LEFT',
@@ -152,12 +152,10 @@ export const SECTION_ORDER: SectionTag[] = [
 // curated separately so the older detail-rich values (stage_left, section_100,
 // etc.) don't clutter the mobile tag step.
 export const UPLOAD_SECTION_OPTIONS: SectionTag[] = [
-  'pit',
   'floor',
-  'seated',
+  'section_100',
+  'upper',
   'vip',
-  'outside',
-  'concourse',
 ];
 
 export const ENTITY_TYPE_LABELS: Record<EntityType, string> = {
