@@ -6,12 +6,15 @@
 //
 // URL params:
 //   ?status=all|active|uploading|removed  (default: all)
+//   ?entity=<entity_id>
+//   ?event=<event_id>
 //   ?page=N  (25 per page)
 
 import Link from 'next/link';
 import { deleteMedia, activateMedia } from './actions';
 import { HardDeleteButton } from './delete-button';
 import { SongTagEditor } from '@/components/admin/song-tag-editor';
+import { AdminMediaFilters } from '@/components/admin/media-filters';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 export const dynamic = 'force-dynamic';
@@ -55,18 +58,28 @@ interface MediaRow {
 export default async function AdminMediaPage({
   searchParams,
 }: {
-  searchParams: { status?: string; page?: string };
+  searchParams: { status?: string; page?: string; entity?: string; event?: string };
 }) {
   const supabase = createAdminClient();
   const statusFilter = searchParams.status ?? 'all';
+  const entityFilter = searchParams.entity ?? '';
+  const eventFilter = searchParams.event ?? '';
   const page = Math.max(1, Number(searchParams.page ?? '1'));
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
 
+  // Fetch all entities for the filter dropdown.
+  const { data: entitiesRaw } = await supabase
+    .from('entities')
+    .select('id, slug, name')
+    .order('name', { ascending: true })
+    .limit(500);
+  const entities = (entitiesRaw ?? []) as { id: string; slug: string; name: string }[];
+
   let query = supabase
     .from('media')
     .select(
-      'id, file_type, status, storage_url, thumbnail_url, mux_playback_id, duration_sec, song_tag, caption, view_count, like_count, created_at, uploader_id, upload_session, event:events(id, name, slug, setlist, entity:entities(name, slug))',
+      'id, file_type, status, storage_url, thumbnail_url, mux_playback_id, duration_sec, song_tag, caption, view_count, like_count, created_at, uploader_id, upload_session, event:events(id, name, slug, setlist, entity_id, entity:entities(name, slug))',
       { count: 'exact' },
     )
     .order('created_at', { ascending: false })
@@ -74,6 +87,11 @@ export default async function AdminMediaPage({
 
   if (statusFilter !== 'all') {
     query = query.eq('status', statusFilter);
+  }
+  if (eventFilter) {
+    query = query.eq('event_id', eventFilter);
+  } else if (entityFilter) {
+    query = query.eq('entity_id', entityFilter);
   }
 
   const { data, count } = await query;
@@ -84,13 +102,20 @@ export default async function AdminMediaPage({
   function pageHref(p: number) {
     const params = new URLSearchParams();
     if (statusFilter !== 'all') params.set('status', statusFilter);
+    if (entityFilter) params.set('entity', entityFilter);
+    if (eventFilter) params.set('event', eventFilter);
     if (p > 1) params.set('page', String(p));
     const s = params.toString();
     return `/admin/media${s ? `?${s}` : ''}`;
   }
 
   function statusHref(s: string) {
-    return s === 'all' ? '/admin/media' : `/admin/media?status=${s}`;
+    const params = new URLSearchParams();
+    if (s !== 'all') params.set('status', s);
+    if (entityFilter) params.set('entity', entityFilter);
+    if (eventFilter) params.set('event', eventFilter);
+    const str = params.toString();
+    return `/admin/media${str ? `?${str}` : ''}`;
   }
 
   return (
@@ -119,6 +144,13 @@ export default async function AdminMediaPage({
           </Link>
         ))}
       </div>
+
+      {/* Entity + Event filters */}
+      <AdminMediaFilters
+        entities={entities}
+        initialEntityId={entityFilter}
+        initialEventId={eventFilter}
+      />
 
       {/* Table */}
       {items.length === 0 ? (
