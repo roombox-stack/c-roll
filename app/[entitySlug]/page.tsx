@@ -75,11 +75,11 @@ interface MediaRow {
   caption: string | null;
   view_count: number;
   like_count: number;
+  event_id: string | null;
   is_full_song: boolean;
   created_at: string;
   upload_session: string | null;
   uploader_id: string | null;
-  event_id: string;
 }
 
 interface EventRow {
@@ -156,7 +156,7 @@ export default async function EntityPage({
     supabase
       .from('media')
       .select(
-        'id, file_type, storage_url, thumbnail_url, mux_playback_id, duration_sec, song_tag, section_tag, caption, view_count, like_count, is_full_song',
+        'id, file_type, storage_url, thumbnail_url, mux_playback_id, duration_sec, song_tag, section_tag, caption, view_count, like_count, is_full_song, event_id',
       )
       .eq('entity_id', entity.id)
       .eq('status', 'active')
@@ -185,6 +185,9 @@ export default async function EntityPage({
   const heroMedia = pickHeroGrid(topMedia, 6);
   const allMedia = (allMediaRes.data ?? []) as unknown as MediaRow[];
   const allEvents = (allEventsRes.data ?? []) as unknown as EventRow[];
+
+  // Map event_id → city so HeroGrid can show city on each card.
+  const eventCityMap = new Map<string, string>(allEvents.map((ev) => [ev.id, ev.city]));
 
   // Stats
   const photoCount = allMedia.filter((m) => m.file_type === 'photo').length;
@@ -377,7 +380,7 @@ export default async function EntityPage({
               <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.08em] text-white/35">
                 // FROM THE FLOOR TO THE UPPER DECK
               </p>
-              <HeroGrid media={heroMedia} entitySlug={entity.slug} />
+              <HeroGrid media={heroMedia} entitySlug={entity.slug} eventCityMap={eventCityMap} />
             </div>
           </div>
         </div>
@@ -615,18 +618,18 @@ function pickHeroGrid(pool: MediaRow[], n: number): MediaRow[] {
   return picked.slice(0, n);
 }
 
-function HeroGrid({ media, entitySlug: _entitySlug }: { media: MediaRow[]; entitySlug: string }) {
+function HeroGrid({ media, entitySlug: _entitySlug, eventCityMap }: { media: MediaRow[]; entitySlug: string; eventCityMap: Map<string, string> }) {
   const slots = Array.from({ length: 6 }, (_, i) => media[i] ?? null);
   return (
     <div className="grid grid-cols-3 grid-rows-2 gap-2">
       {slots.map((m, i) => (
-        <HeroThumb key={m?.id ?? `empty-${i}`} media={m} />
+        <HeroThumb key={m?.id ?? `empty-${i}`} media={m} city={m?.event_id ? (eventCityMap.get(m.event_id) ?? null) : null} />
       ))}
     </div>
   );
 }
 
-function HeroThumb({ media }: { media: MediaRow | null }) {
+function HeroThumb({ media, city }: { media: MediaRow | null; city: string | null }) {
   if (!media) {
     return <div className="aspect-[4/5] rounded-lg bg-white/5" />;
   }
@@ -657,13 +660,13 @@ function HeroThumb({ media }: { media: MediaRow | null }) {
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/10" />
 
-      {/* Section badge top-left — matches the event Browse tab style */}
-      {media.section_tag && HERO_SECTION_LABELS[media.section_tag] ? (
+      {/* City badge top-left */}
+      {city ? (
         <span
           className="absolute left-2 top-2 rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold tracking-widest"
           style={{ backgroundColor: 'rgba(255,204,0,0.15)', color: '#FFCC00' }}
         >
-          {HERO_SECTION_LABELS[media.section_tag]}
+          {city.toUpperCase()}
         </span>
       ) : null}
 
