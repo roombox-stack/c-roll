@@ -12,6 +12,7 @@ import {
 } from '@/components/admin/form-fields';
 import { updateEntity } from '../actions';
 import { HeroPickerClient } from './hero-picker';
+import { HeroGridPicker, type HeroMediaOption } from './hero-grid-picker';
 import { DangerZone } from './danger-zone';
 import { SavedToast } from '@/components/admin/saved-toast';
 
@@ -35,23 +36,55 @@ export default async function EditEntityPage({
 
   const [{ data: entity }, { data: mediaRows }] = await Promise.all([
     supabase.from('entities').select('*').eq('id', params.id).maybeSingle(),
+    // All active media for this entity — used by both pickers.
     supabase
       .from('media')
-      .select('id, storage_url, thumbnail_url, event:events!inner(entity_id)')
-      .eq('file_type', 'photo')
+      .select('id, file_type, storage_url, thumbnail_url, song_tag, duration_sec, view_count, event:events!inner(entity_id, city)')
       .eq('status', 'active')
       .eq('events.entity_id', params.id)
       .order('view_count', { ascending: false })
-      .limit(60),
+      .limit(120),
   ]);
 
   if (!entity) notFound();
 
-  const mediaOptions = (mediaRows ?? []).map((m: any) => ({
-    id: m.id,
-    url: m.storage_url as string,
-    thumbnail_url: m.thumbnail_url as string | null,
-  }));
+  type RawMedia = {
+    id: string;
+    file_type: 'photo' | 'video';
+    storage_url: string;
+    thumbnail_url: string | null;
+    song_tag: string | null;
+    duration_sec: number | null;
+    view_count: number;
+    event: { entity_id: string; city: string } | { entity_id: string; city: string }[] | null;
+  };
+
+  const rawMedia = (mediaRows ?? []) as unknown as RawMedia[];
+
+  // For the background hero image picker — photos only.
+  const photoOptions = rawMedia
+    .filter((m) => m.file_type === 'photo')
+    .map((m) => ({
+      id: m.id,
+      url: m.storage_url,
+      thumbnail_url: m.thumbnail_url,
+    }));
+
+  // For the hero grid picker — all media.
+  const gridOptions: HeroMediaOption[] = rawMedia.map((m) => {
+    const ev = Array.isArray(m.event) ? m.event[0] : m.event;
+    return {
+      id: m.id,
+      file_type: m.file_type,
+      storage_url: m.storage_url,
+      thumbnail_url: m.thumbnail_url,
+      song_tag: m.song_tag,
+      duration_sec: m.duration_sec,
+      event_city: ev?.city ?? null,
+    };
+  });
+
+  const pinnedIds: string[] = Array.isArray(entity?.hero_media_ids) ? entity.hero_media_ids : [];
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -91,9 +124,23 @@ export default async function EditEntityPage({
           <HeroPickerClient
             entityId={entity.id}
             currentHeroUrl={entity.hero_image_url ?? null}
-            mediaOptions={mediaOptions}
+            mediaOptions={photoOptions}
           />
         </div>
+      </div>
+
+      {/* Hero grid picker — full width */}
+      <div className="rounded-lg border border-ash bg-smoke p-4">
+        <h2 className="mb-1 text-sm font-semibold">Hero grid clips</h2>
+        <p className="mb-4 text-xs text-gray-500">
+          Pin up to 6 clips for the &ldquo;From the floor to the upper deck&rdquo; grid.
+          Leave empty to auto-select by view count.
+        </p>
+        <HeroGridPicker
+          entityId={entity.id}
+          mediaOptions={gridOptions}
+          initialIds={pinnedIds}
+        />
       </div>
 
       <DangerZone

@@ -53,6 +53,17 @@ export async function createEntity(formData: FormData) {
   redirect(`/admin/entities/${data.id}`);
 }
 
+export async function setHeroMediaIds(entityId: string, ids: string[]) {
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from('entities')
+    .update({ hero_media_ids: ids.length > 0 ? ids.slice(0, 6) : null })
+    .eq('id', entityId);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/admin/entities/${entityId}`);
+  revalidatePath('/admin/entities');
+}
+
 export async function setHeroImage(entityId: string, heroImageUrl: string | null) {
   const supabase = createAdminClient();
   const { error } = await supabase

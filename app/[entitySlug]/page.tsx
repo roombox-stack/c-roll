@@ -51,6 +51,7 @@ const TEAM_HIGHLIGHTS: { value: Highlight; label: string }[] = [
 ];
 
 interface EntityRow {
+  hero_media_ids: string[] | null;
   id: string;
   slug: string;
   name: string;
@@ -99,7 +100,7 @@ async function fetchEntity(slug: string): Promise<EntityRow | null> {
   const supabase = createAdminClient();
   const { data } = await supabase
     .from('entities')
-    .select('id, slug, name, type, genre, bio, verified, claimed, hero_image_url, follower_count')
+    .select('id, slug, name, type, genre, bio, verified, claimed, hero_image_url, hero_media_ids, follower_count')
     .eq('slug', slug)
     .eq('hidden', false)
     .maybeSingle();
@@ -180,14 +181,26 @@ export default async function EntityPage({
   ]);
 
   const topMedia = (topMediaRes.data ?? []) as unknown as MediaRow[];
-  // Hero grid: prefer section variety (one clip per distinct section) before
-  // filling remaining slots by view count. topMedia is already view-desc.
-  const heroMedia = pickHeroGrid(topMedia, 6);
   const allMedia = (allMediaRes.data ?? []) as unknown as MediaRow[];
   const allEvents = (allEventsRes.data ?? []) as unknown as EventRow[];
 
   // Map event_id → city so HeroGrid can show city on each card.
   const eventCityMap = new Map<string, string>(allEvents.map((ev) => [ev.id, ev.city]));
+
+  // Hero grid: use admin-pinned IDs when present, otherwise auto-select.
+  const pinnedIds: string[] = Array.isArray(entity.hero_media_ids) ? entity.hero_media_ids : [];
+  let heroMedia: MediaRow[];
+  if (pinnedIds.length > 0) {
+    const byId = new Map<string, MediaRow>(topMedia.map((m) => [m.id, m]));
+    // Also search allMedia in case pinned items aren't in the top-30.
+    for (const m of allMedia) if (!byId.has(m.id)) byId.set(m.id, m);
+    heroMedia = pinnedIds
+      .map((id) => byId.get(id))
+      .filter((m): m is MediaRow => m != null);
+  } else {
+    // Auto-select: prefer section variety then fill by view count.
+    heroMedia = pickHeroGrid(topMedia, 6);
+  }
 
   // Stats
   const photoCount = allMedia.filter((m) => m.file_type === 'photo').length;
