@@ -222,6 +222,7 @@ export default async function AdminMediaPage({
                           {ev.name}
                         </Link>
                       )}
+                      {m.file_type === 'video' ? (
                       <div className="mt-1">
                         <SongTagEditor
                           mediaId={m.id}
@@ -229,6 +230,7 @@ export default async function AdminMediaPage({
                           setlist={ev?.setlist ?? null}
                         />
                       </div>
+                      ) : null}
                     </td>
 
                     {/* Type */}

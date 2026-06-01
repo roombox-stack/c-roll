@@ -35,13 +35,15 @@ function normalizeSongTag(raw: unknown): string | null {
   return t.slice(0, MAX_SONG_TAG);
 }
 
-/** Set song_tag on a single media row. Pass null to clear. */
+/** Set song_tag on a single media row. Pass null to clear.
+ *  Song tags are only allowed on videos — photos are silently skipped. */
 export async function setSongTag(id: string, songTag: string | null) {
   const supabase = createAdminClient();
   const { error } = await supabase
     .from('media')
     .update({ song_tag: normalizeSongTag(songTag) })
-    .eq('id', id);
+    .eq('id', id)
+    .eq('file_type', 'video'); // photos never get song tags
   if (error) throw new Error(error.message);
   revalidatePath('/admin/media');
   revalidatePath('/admin/moderation');
