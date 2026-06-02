@@ -536,6 +536,12 @@ function FilesStep({
           <p className="mt-1 text-sm text-gray-500">
             or tap to pick from your camera roll &mdash; up to {MAX_FILES} files
           </p>
+          <p className="mt-2 text-xs text-gray-600">
+            New to C-Roll?{' '}
+            <Link href="/why" className="underline hover:text-gray-400">
+              Why upload here →
+            </Link>
+          </p>
 
           {/* Choose files button */}
           <button
