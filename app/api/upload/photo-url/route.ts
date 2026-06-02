@@ -18,6 +18,7 @@ import {
   publicUrlForKey,
 } from '@/lib/r2';
 import { isValidSessionToken } from '@/lib/session';
+import { getCurrentUser } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
   let body: { filename?: unknown; contentType?: unknown; eventId?: unknown; sessionToken?: unknown };
@@ -49,6 +50,7 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = createAdminClient();
+  const currentUser = await getCurrentUser();
 
   // Look up the event so we can fill entity_id on the media row.
   const { data: event, error: eventErr } = await supabase
@@ -69,6 +71,7 @@ export async function POST(req: NextRequest) {
       entity_id: event.entity_id,
       file_type: 'photo',
       storage_url: '', // filled below after key is built
+      uploader_id: currentUser?.id ?? null,
       upload_session: (sessionToken as string | undefined) ?? null,
       status: 'uploading',
     })
