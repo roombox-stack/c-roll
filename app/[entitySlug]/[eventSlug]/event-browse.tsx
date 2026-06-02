@@ -1507,16 +1507,20 @@ function DesktopVideoModal({
 
         {/* Modal panel */}
         <div
-          className="relative z-10 flex overflow-hidden rounded-lg"
+          className="relative z-10 flex overflow-hidden"
           style={{
-            width: '85vw',
-            maxWidth: '1400px',
+            width: '95vw',
+            maxWidth: '1600px',
+            height: '90vh',
+            borderRadius: '10px',
+            border: '1px solid rgba(255,255,255,0.1)',
+            boxShadow: '0 0 0 1px rgba(255,255,255,0.06), 0 32px 96px rgba(0,0,0,0.9)',
             animation: 'croll-modal-in 150ms ease forwards',
           }}
         >
           {/* ── Left: video player ──── */}
-          <div className="relative bg-black" style={{ flex: '0 0 70%' }}>
-            <div className="relative aspect-video w-full bg-black">
+          <div className="relative flex items-center justify-center bg-black" style={{ flex: '0 0 75%', height: '90vh' }}>
+            <div className="relative h-full w-full bg-black">
               {media.mux_playback_id ? (
                 <VideoPlayer
                   playbackId={media.mux_playback_id}
@@ -1564,7 +1568,7 @@ function DesktopVideoModal({
           {/* ── Right: metadata panel ── */}
           <div
             className="flex flex-col overflow-y-auto"
-            style={{ flex: '0 0 30%', background: '#0d0d0d', borderRadius: '0 8px 8px 0', padding: '24px' }}
+            style={{ flex: '0 0 25%', background: '#0d0d0d', padding: '24px' }}
           >
             {/* Section badge */}
             {media.section_tag ? (
@@ -1630,8 +1634,8 @@ function DesktopVideoModal({
                         onClick={() => onNavigate(m.id)}
                         className="flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left transition hover:bg-white/5"
                       >
-                        {/* Thumbnail 60×40 */}
-                        <div className="relative h-10 w-[60px] shrink-0 overflow-hidden rounded bg-smoke">
+                        {/* Thumbnail 48×32 */}
+                        <div className="relative h-8 w-12 shrink-0 overflow-hidden rounded bg-smoke">
                           {thumb ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={thumb} alt="" className="h-full w-full object-cover" />
@@ -1657,15 +1661,15 @@ function DesktopVideoModal({
           </div>
         </div>
 
-        {/* X close button — positioned relative to the viewport */}
+        {/* X close button — inside modal, top-right corner */}
         <button
           type="button"
           onClick={onClose}
           aria-label="Close"
-          className="absolute flex items-center justify-center rounded-full text-white transition"
+          className="absolute flex items-center justify-center rounded-full text-white transition z-20"
           style={{
-            top: '16px',
-            right: '16px',
+            top: '12px',
+            right: '12px',
             width: '36px',
             height: '36px',
             background: 'rgba(255,255,255,0.1)',
