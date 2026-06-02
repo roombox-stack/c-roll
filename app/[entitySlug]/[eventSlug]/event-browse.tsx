@@ -97,6 +97,7 @@ export function EventBrowse({
   const [sortKey, setSortKey] = useState<SortKey>('views');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [fullscreenId, setFullscreenId] = useState<string | null>(null);
+  const [desktopModalId, setDesktopModalId] = useState<string | null>(null);
   const [openSheet, setOpenSheet] = useState<SheetKey>(null);
   const savedScrollY = useRef(0);
 
@@ -106,19 +107,17 @@ export function EventBrowse({
   const [tagOverrides, setTagOverrides] = useState<Map<string, string>>(() => new Map());
   const [tagError, setTagError] = useState<string | null>(null);
 
-  // Lock body scroll while fullscreen overlay or bottom sheet is open.
+  // Lock body scroll while fullscreen overlay, desktop modal, or bottom sheet is open.
   useEffect(() => {
-    if (fullscreenId || openSheet) {
+    if (fullscreenId || openSheet || desktopModalId) {
       savedScrollY.current = window.scrollY;
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
-      if (fullscreenId === null && openSheet === null) {
-        window.scrollTo({ top: savedScrollY.current, behavior: 'instant' });
-      }
+      window.scrollTo({ top: savedScrollY.current, behavior: 'instant' });
     }
     return () => { document.body.style.overflow = ''; };
-  }, [fullscreenId, openSheet]);
+  }, [fullscreenId, openSheet, desktopModalId]);
 
   // Setlist data quality guard — strip non-song entries before rendering.
   const cleanSetlist = useMemo(
@@ -297,6 +296,22 @@ export function EventBrowse({
         onNext={fullscreenIdx < videoList.length - 1 ? () => setFullscreenId(videoList[fullscreenIdx + 1].id) : null}
       />
     ) : null}
+
+    {/* ── Desktop video modal overlay ──────────────────────────────────── */}
+    {desktopModalId ? (() => {
+      const dm = filtered.find(m => m.id === desktopModalId) ?? media.find(m => m.id === desktopModalId) ?? null;
+      const dmIdx = videoList.findIndex(m => m.id === desktopModalId);
+      return dm ? (
+        <DesktopVideoModal
+          media={dm}
+          allMedia={media}
+          videoList={videoList}
+          currentIdx={dmIdx}
+          onClose={() => setDesktopModalId(null)}
+          onNavigate={(id) => setDesktopModalId(id)}
+        />
+      ) : null;
+    })() : null}
 
     {/* ── Bottom sheets (mobile) ───────────────────────────────────────── */}
     <BottomSheet open={openSheet === 'song'} onClose={() => setOpenSheet(null)} title="// STEP THROUGH THE SHOW">
@@ -487,13 +502,13 @@ export function EventBrowse({
                 );
               })}
             </div>
-            {/* Desktop: existing mosaic */}
+            {/* Desktop: mosaic — videos open modal overlay, photos inline-expand */}
             <div
               className="hidden md:grid md:gap-3"
               style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}
             >
               {filtered.map((m) => {
-                if (m.id === expandedId && expandedMedia) {
+                if (m.file_type === 'photo' && m.id === expandedId && expandedMedia) {
                   return (
                     <ExpandedCard
                       key={m.id}
@@ -509,7 +524,13 @@ export function EventBrowse({
                     songOverride={tagOverrides.get(m.id)}
                     canTag={cleanSetlist.length > 0}
                     onTagClick={() => setTagMediaId(m.id)}
-                    onClick={() => setExpandedId(m.id)}
+                    onClick={() => {
+                      if (m.file_type === 'video') {
+                        setDesktopModalId(m.id);
+                      } else {
+                        setExpandedId(m.id === expandedId ? null : m.id);
+                      }
+                    }}
                   />
                 );
               })}
@@ -1415,6 +1436,277 @@ function ExpandedCard({
         </div>
       </div>
     </div>
+  );
+}
+
+// ── Desktop video modal overlay (md+ only) ──────────────────────────────────
+
+function DesktopVideoModal({
+  media,
+  allMedia,
+  videoList,
+  currentIdx,
+  onClose,
+  onNavigate,
+}: {
+  media: EventBrowseMedia;
+  allMedia: EventBrowseMedia[];
+  videoList: EventBrowseMedia[];
+  currentIdx: number;
+  onClose: () => void;
+  onNavigate: (id: string) => void;
+}) {
+  const song = cleanLabel(media.song_tag);
+  const caption = cleanLabel(media.caption);
+  const hasPrev = currentIdx > 0;
+  const hasNext = currentIdx < videoList.length - 1;
+
+  const moreFromShow = allMedia
+    .filter((m) => m.file_type === 'video' && m.id !== media.id)
+    .sort((a, b) => b.view_count - a.view_count)
+    .slice(0, 5);
+
+  const uploaderHandle = media.uploader_id
+    ? `@${media.uploader_id.slice(0, 8)}`
+    : '@fan';
+
+  // Keyboard navigation
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') { onClose(); return; }
+      if (e.key === 'ArrowLeft' && hasPrev) onNavigate(videoList[currentIdx - 1].id);
+      if (e.key === 'ArrowRight' && hasNext) onNavigate(videoList[currentIdx + 1].id);
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [hasPrev, hasNext, currentIdx, videoList, onClose, onNavigate]);
+
+  return (
+    <>
+      {/* Keyframe animations */}
+      <style>{`
+        @keyframes croll-backdrop-in { from { opacity:0 } to { opacity:1 } }
+        @keyframes croll-modal-in { from { opacity:0; transform:scale(0.96) } to { opacity:1; transform:scale(1) } }
+      `}</style>
+
+      {/* Full-viewport overlay — hidden on mobile */}
+      <div
+        className="fixed inset-0 z-50 hidden md:flex items-center justify-center"
+        role="dialog"
+        aria-modal="true"
+      >
+        {/* Backdrop */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: 'rgba(0,0,0,0.88)',
+            animation: 'croll-backdrop-in 150ms ease forwards',
+          }}
+          onClick={onClose}
+        />
+
+        {/* Modal panel */}
+        <div
+          className="relative z-10 flex overflow-hidden rounded-lg"
+          style={{
+            width: '85vw',
+            maxWidth: '1400px',
+            animation: 'croll-modal-in 150ms ease forwards',
+          }}
+        >
+          {/* ── Left: video player ──── */}
+          <div className="relative bg-black" style={{ flex: '0 0 70%' }}>
+            <div className="relative aspect-video w-full bg-black">
+              {media.mux_playback_id ? (
+                <VideoPlayer
+                  playbackId={media.mux_playback_id}
+                  autoPlay
+                  poster={media.thumbnail_url ?? undefined}
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-sm text-gray-500">
+                  Video unavailable
+                </div>
+              )}
+            </div>
+
+            {/* Prev arrow */}
+            {hasPrev ? (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onNavigate(videoList[currentIdx - 1].id); }}
+                aria-label="Previous video"
+                className="absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full text-white transition hover:bg-white/20"
+                style={{ background: 'rgba(0,0,0,0.5)' }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+              </button>
+            ) : null}
+
+            {/* Next arrow */}
+            {hasNext ? (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onNavigate(videoList[currentIdx + 1].id); }}
+                aria-label="Next video"
+                className="absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full text-white transition hover:bg-white/20"
+                style={{ background: 'rgba(0,0,0,0.5)' }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+            ) : null}
+          </div>
+
+          {/* ── Right: metadata panel ── */}
+          <div
+            className="flex flex-col overflow-y-auto"
+            style={{ flex: '0 0 30%', background: '#0d0d0d', borderRadius: '0 8px 8px 0', padding: '24px' }}
+          >
+            {/* Section badge */}
+            {media.section_tag ? (
+              <span
+                className="mb-2 self-start rounded px-2 py-0.5 font-mono text-[10px] font-semibold tracking-widest"
+                style={{ backgroundColor: 'rgba(255,204,0,0.15)', color: '#FFCC00' }}
+              >
+                {SECTION_BADGE_LABELS[media.section_tag]}
+              </span>
+            ) : null}
+
+            {/* Song tag */}
+            {song ? (
+              <span className="mb-2 self-start rounded-full bg-white/10 px-3 py-1 text-sm font-medium text-white">
+                {song}
+              </span>
+            ) : null}
+
+            {/* Caption */}
+            {caption ? (
+              <p className="mb-3 text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                {caption}
+              </p>
+            ) : null}
+
+            {/* Uploader + views */}
+            <p className="text-[13px] text-gray-500">{uploaderHandle}</p>
+            <p className="mt-0.5 text-[13px] text-gray-500">{formatCount(media.view_count)} views</p>
+
+            {/* Divider */}
+            <div className="my-4 h-px bg-white/10" />
+
+            {/* Like button */}
+            <div className="mb-2">
+              <CardLikeButton
+                mediaId={media.id}
+                initialLikeCount={media.like_count}
+                className="w-full justify-center rounded-md border border-white/15 bg-white/5 px-4 py-2 text-sm hover:bg-white/10"
+              />
+            </div>
+
+            {/* Share button */}
+            <ModalShareButton mediaId={media.id} />
+
+            {/* Divider */}
+            <div className="my-4 h-px bg-white/10" />
+
+            {/* More from this show */}
+            <p className="mb-3 font-mono text-[11px] uppercase tracking-widest text-gray-600">
+              More from this show
+            </p>
+            {moreFromShow.length === 0 ? (
+              <p className="text-xs text-gray-600">No other clips yet.</p>
+            ) : (
+              <ul className="space-y-2">
+                {moreFromShow.map((m) => {
+                  const thumb = m.thumbnail_url ?? null;
+                  const mSong = cleanLabel(m.song_tag);
+                  return (
+                    <li key={m.id}>
+                      <button
+                        type="button"
+                        onClick={() => onNavigate(m.id)}
+                        className="flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left transition hover:bg-white/5"
+                      >
+                        {/* Thumbnail 60×40 */}
+                        <div className="relative h-10 w-[60px] shrink-0 overflow-hidden rounded bg-smoke">
+                          {thumb ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={thumb} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center text-gray-600 text-[10px]">▶</div>
+                          )}
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 transition group-hover:opacity-100">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="white" aria-hidden><path d="M8 5v14l11-7z"/></svg>
+                          </div>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-xs text-gray-300">
+                            {mSong ?? (m.duration_sec ? formatDuration(m.duration_sec) : 'Video')}
+                          </p>
+                          <p className="text-[11px] text-gray-600">{formatCount(m.view_count)} views</p>
+                        </div>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        </div>
+
+        {/* X close button — positioned relative to the viewport */}
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute flex items-center justify-center rounded-full text-white transition"
+          style={{
+            top: '16px',
+            right: '16px',
+            width: '36px',
+            height: '36px',
+            background: 'rgba(255,255,255,0.1)',
+          }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.2)'; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.1)'; }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+    </>
+  );
+}
+
+function ModalShareButton({ mediaId }: { mediaId: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={async () => {
+        const url = `${window.location.origin}${window.location.pathname}?clip=${mediaId}`;
+        try {
+          await navigator.clipboard.writeText(url);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        } catch { /* blocked */ }
+      }}
+      className="flex w-full items-center justify-center gap-2 rounded-md border border-white/15 bg-white/5 px-4 py-2 text-sm text-white transition hover:bg-white/10"
+    >
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <circle cx="18" cy="5" r="3" />
+        <circle cx="6" cy="12" r="3" />
+        <circle cx="18" cy="19" r="3" />
+        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+      </svg>
+      {copied ? 'Copied!' : 'Share'}
+    </button>
   );
 }
 
