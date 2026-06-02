@@ -5,7 +5,7 @@ import { Footer } from '@/components/footer';
 
 export const metadata: Metadata = {
   title: 'Why upload — c-roll',
-  description: 'Every night, tens of thousands of fans film concerts, games, and live events. Most of that footage disappears. C-Roll is where it lives instead.',
+  description: 'Every night, tens of thousands of fans film concerts, games, and live events. Most of that footage disappears. c-roll is where it lives instead.',
   alternates: { canonical: '/why' },
 };
 
@@ -20,12 +20,12 @@ export default function WhyPage() {
           For uploaders
         </p>
         <h1 className="mt-3 text-4xl font-bold leading-tight">
-          You were there. Now everyone can be.
+          You were there. Now everyone else can be.
         </h1>
         <p className="mt-4 text-xl text-gray-400 leading-relaxed">
           Every night, tens of thousands of fans film concerts, games, and live events. Most of
           that footage disappears — buried in camera rolls, forgotten in Stories, lost in an
-          algorithm. C-Roll is where it lives instead.
+          algorithm. c-roll is where it lives instead.
         </p>
         <Link
           href="/upload"
@@ -72,7 +72,7 @@ export default function WhyPage() {
               <div>
                 <h3 className="font-semibold text-white">It&rsquo;s permanent</h3>
                 <p className="mt-1">
-                  Instagram Stories vanish in 24 hours. TikToks get buried. A C-Roll upload
+                  Instagram Stories vanish in 24 hours. TikToks get buried. a c-roll upload
                   lives at a permanent URL — searchable, shareable, and findable years from
                   now. The show happened. The record should too.
                 </p>
@@ -83,7 +83,7 @@ export default function WhyPage() {
               <div>
                 <h3 className="font-semibold text-white">People can actually find your clip</h3>
                 <p className="mt-1">
-                  On YouTube, your clip competes against every other upload ever. On C-Roll,
+                  On YouTube, your clip competes against every other upload ever. on c-roll,
                   it&rsquo;s organized by artist, event, date, and section. Someone searching
                   for &ldquo;Morgan Wallen Boston May 2026&rdquo; finds your clip directly —
                   not 400 others.
@@ -121,7 +121,7 @@ export default function WhyPage() {
                 <p className="mt-1">
                   On TikTok and YouTube, your clip succeeds or fails based on watch time,
                   posting time, trending sounds, and a hundred things you don&rsquo;t control.
-                  On C-Roll, your clip is surfaced to everyone looking at that event —
+                  on c-roll, your clip is surfaced to everyone looking at that event —
                   automatically, forever, regardless of when you uploaded it.
                 </p>
               </div>
@@ -149,7 +149,7 @@ export default function WhyPage() {
               <thead>
                 <tr className="border-b border-ash bg-smoke/60">
                   <th className="px-4 py-3 text-left font-semibold text-white">Feature</th>
-                  <th className="px-4 py-3 text-left font-semibold text-croll">C-Roll</th>
+                  <th className="px-4 py-3 text-left font-semibold text-croll">c-roll</th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-300">Instagram &amp; TikTok</th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-300">YouTube</th>
                 </tr>
@@ -205,12 +205,12 @@ export default function WhyPage() {
         {/* Pull quote */}
         <blockquote className="mt-16 border-l-4 border-croll pl-6 text-gray-300 leading-relaxed">
           <p className="text-lg">
-            &ldquo;In filmmaking, C-roll is the third camera — the one capturing unexpected
+            &ldquo;In filmmaking, c-roll is the third camera — the one capturing unexpected
             details no one else thought to cover. To us, the C also stands for crowd. Sixty
             thousand people, each running their own camera, from angles no production crew could
             ever reach.&rdquo;
           </p>
-          <footer className="mt-3 text-sm text-gray-500">— C-Roll, on the name</footer>
+          <footer className="mt-3 text-sm text-gray-500">— c-roll, on the name</footer>
         </blockquote>
 
         {/* Bottom CTA */}
