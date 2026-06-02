@@ -18,13 +18,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { MUX_WEBHOOK_SECRET, muxThumbnailUrl } from '@/lib/mux';
+import { getMux, MUX_WEBHOOK_SECRET, muxThumbnailUrl } from '@/lib/mux';
 
 function normalize(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
 }
 
-async function autoTagFromAudd(mediaId: string, playbackId: string, eventId: string) {
+async function autoTagFromAudd(mediaId: string, muxAssetId: string, eventId: string) {
   const token = process.env.AUDD_API_TOKEN;
   if (!token) return;
 
@@ -40,10 +40,33 @@ async function autoTagFromAudd(mediaId: string, playbackId: string, eventId: str
   const setlist: string[] = event?.setlist ?? [];
   if (setlist.length === 0) return;
 
-  // Call AudD
+  // Get a temporary master access URL from Mux
+  const mux = getMux();
+  let asset = await mux.video.assets.retrieve(muxAssetId);
+
+  if (asset.master_access !== 'temporary') {
+    await mux.video.assets.updateMasterAccess(muxAssetId, { master_access: 'temporary' });
+  }
+
+  let masterUrl: string | undefined;
+  const MAX_ATTEMPTS = 10;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    asset = await mux.video.assets.retrieve(muxAssetId);
+    masterUrl = asset.master?.url;
+    if (masterUrl) break;
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+  }
+
+  if (!masterUrl) return;
+
+  // Download only the first 8 MB so we stay within AudD's file size limit
+  const chunkRes = await fetch(masterUrl, { headers: { Range: 'bytes=0-8388607' } });
+  if (!chunkRes.ok && chunkRes.status !== 206) return;
+  const audioBlob = await chunkRes.blob();
+
   const form = new FormData();
   form.append('api_token', token);
-  form.append('url', `https://stream.mux.com/${playbackId}/audio.m4a`);
+  form.append('file', audioBlob, 'audio.mp4');
   form.append('return', 'timecode');
 
   const res = await fetch('https://api.audd.io/', { method: 'POST', body: form });
@@ -64,8 +87,8 @@ async function autoTagFromAudd(mediaId: string, playbackId: string, eventId: str
     .is('song_tag', null);
 }
 
-function fireAndForget(mediaId: string, playbackId: string, eventId: string) {
-  autoTagFromAudd(mediaId, playbackId, eventId).catch((err: unknown) => {
+function fireAndForget(mediaId: string, muxAssetId: string, eventId: string) {
+  autoTagFromAudd(mediaId, muxAssetId, eventId).catch((err: unknown) => {
     console.error('[audd] auto-tag failed', err);
   });
 }
@@ -172,7 +195,7 @@ export async function POST(req: NextRequest) {
 
     const row = updatedRows?.[0];
     if (row?.id && row?.event_id) {
-      fireAndForget(row.id as string, playbackId, row.event_id as string);
+      fireAndForget(row.id as string, assetId, row.event_id as string);
     }
   } else if (type === 'video.asset.errored') {
     const uploadId = data.upload_id;
