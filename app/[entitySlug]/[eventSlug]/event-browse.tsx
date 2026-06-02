@@ -1231,7 +1231,7 @@ function MobileTile({
         <span className="absolute left-1 top-1 max-w-[80%] truncate rounded-full bg-white/10 px-1.5 py-0.5 text-[9px] text-white/70 backdrop-blur">
           {songOverride ?? media.song_tag}
         </span>
-      ) : canTag && onTagClick ? (
+      ) : canTag && onTagClick && isVideo ? (
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onTagClick(); }}
@@ -1308,7 +1308,7 @@ function MosaicTile({
         <span className="absolute bottom-2 left-2 max-w-[80%] truncate rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-white/80 backdrop-blur">
           {song}
         </span>
-      ) : canTag && onTagClick ? (
+      ) : canTag && onTagClick && isVideo ? (
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onTagClick(); }}
