@@ -297,15 +297,15 @@ export function EventBrowse({
       />
     ) : null}
 
-    {/* ── Desktop video modal overlay ──────────────────────────────────── */}
+    {/* ── Desktop media modal overlay (photos + videos) ───────────────── */}
     {desktopModalId ? (() => {
       const dm = filtered.find(m => m.id === desktopModalId) ?? media.find(m => m.id === desktopModalId) ?? null;
-      const dmIdx = videoList.findIndex(m => m.id === desktopModalId);
+      const dmIdx = filtered.findIndex(m => m.id === desktopModalId);
       return dm ? (
-        <DesktopVideoModal
+        <DesktopMediaModal
           media={dm}
           allMedia={media}
-          videoList={videoList}
+          mediaList={filtered}
           currentIdx={dmIdx}
           onClose={() => setDesktopModalId(null)}
           onNavigate={(id) => setDesktopModalId(id)}
@@ -502,38 +502,21 @@ export function EventBrowse({
                 );
               })}
             </div>
-            {/* Desktop: mosaic — videos open modal overlay, photos inline-expand */}
+            {/* Desktop: all tiles open the modal overlay */}
             <div
               className="hidden md:grid md:gap-3"
               style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}
             >
-              {filtered.map((m) => {
-                if (m.file_type === 'photo' && m.id === expandedId && expandedMedia) {
-                  return (
-                    <ExpandedCard
-                      key={m.id}
-                      media={expandedMedia}
-                      onClose={() => setExpandedId(null)}
-                    />
-                  );
-                }
-                return (
-                  <MosaicTile
-                    key={m.id}
-                    media={m}
-                    songOverride={tagOverrides.get(m.id)}
-                    canTag={cleanSetlist.length > 0}
-                    onTagClick={() => setTagMediaId(m.id)}
-                    onClick={() => {
-                      if (m.file_type === 'video') {
-                        setDesktopModalId(m.id);
-                      } else {
-                        setExpandedId(m.id === expandedId ? null : m.id);
-                      }
-                    }}
-                  />
-                );
-              })}
+              {filtered.map((m) => (
+                <MosaicTile
+                  key={m.id}
+                  media={m}
+                  songOverride={tagOverrides.get(m.id)}
+                  canTag={cleanSetlist.length > 0}
+                  onTagClick={() => setTagMediaId(m.id)}
+                  onClick={() => setDesktopModalId(m.id)}
+                />
+              ))}
             </div>
           </>
         )}
@@ -1439,19 +1422,19 @@ function ExpandedCard({
   );
 }
 
-// ── Desktop video modal overlay (md+ only) ──────────────────────────────────
+// ── Desktop media modal overlay (md+ only) — handles both photos and videos ──
 
-function DesktopVideoModal({
+function DesktopMediaModal({
   media,
   allMedia,
-  videoList,
+  mediaList,
   currentIdx,
   onClose,
   onNavigate,
 }: {
   media: EventBrowseMedia;
   allMedia: EventBrowseMedia[];
-  videoList: EventBrowseMedia[];
+  mediaList: EventBrowseMedia[];
   currentIdx: number;
   onClose: () => void;
   onNavigate: (id: string) => void;
@@ -1459,10 +1442,10 @@ function DesktopVideoModal({
   const song = cleanLabel(media.song_tag);
   const caption = cleanLabel(media.caption);
   const hasPrev = currentIdx > 0;
-  const hasNext = currentIdx < videoList.length - 1;
+  const hasNext = currentIdx < mediaList.length - 1;
 
   const moreFromShow = allMedia
-    .filter((m) => m.file_type === 'video' && m.id !== media.id)
+    .filter((m) => m.id !== media.id)
     .sort((a, b) => b.view_count - a.view_count)
     .slice(0, 5);
 
@@ -1474,12 +1457,12 @@ function DesktopVideoModal({
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') { onClose(); return; }
-      if (e.key === 'ArrowLeft' && hasPrev) onNavigate(videoList[currentIdx - 1].id);
-      if (e.key === 'ArrowRight' && hasNext) onNavigate(videoList[currentIdx + 1].id);
+      if (e.key === 'ArrowLeft' && hasPrev) onNavigate(mediaList[currentIdx - 1].id);
+      if (e.key === 'ArrowRight' && hasNext) onNavigate(mediaList[currentIdx + 1].id);
     }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [hasPrev, hasNext, currentIdx, videoList, onClose, onNavigate]);
+  }, [hasPrev, hasNext, currentIdx, mediaList, onClose, onNavigate]);
 
   return (
     <>
@@ -1524,17 +1507,27 @@ function DesktopVideoModal({
             style={{ flex: '0 0 75%', height: '90vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
             <div style={{ width: '100%', height: '100%' }}>
-              {media.mux_playback_id ? (
-                <VideoPlayer
-                  playbackId={media.mux_playback_id}
-                  autoPlay
-                  poster={media.thumbnail_url ?? undefined}
-                  fillHeight
-                />
+              {media.file_type === 'video' ? (
+                media.mux_playback_id ? (
+                  <VideoPlayer
+                    playbackId={media.mux_playback_id}
+                    autoPlay
+                    poster={media.thumbnail_url ?? undefined}
+                    fillHeight
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-sm text-gray-500">
+                    Video unavailable
+                  </div>
+                )
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-sm text-gray-500">
-                  Video unavailable
-                </div>
+                // Photo
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={media.storage_url}
+                  alt={song ?? caption ?? ''}
+                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                />
               )}
             </div>
 
@@ -1542,7 +1535,7 @@ function DesktopVideoModal({
             {hasPrev ? (
               <button
                 type="button"
-                onClick={(e) => { e.stopPropagation(); onNavigate(videoList[currentIdx - 1].id); }}
+                onClick={(e) => { e.stopPropagation(); onNavigate(mediaList[currentIdx - 1].id); }}
                 aria-label="Previous video"
                 className="absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full text-white transition hover:bg-white/20"
                 style={{ background: 'rgba(0,0,0,0.5)' }}
@@ -1557,7 +1550,7 @@ function DesktopVideoModal({
             {hasNext ? (
               <button
                 type="button"
-                onClick={(e) => { e.stopPropagation(); onNavigate(videoList[currentIdx + 1].id); }}
+                onClick={(e) => { e.stopPropagation(); onNavigate(mediaList[currentIdx + 1].id); }}
                 aria-label="Next video"
                 className="absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full text-white transition hover:bg-white/20"
                 style={{ background: 'rgba(0,0,0,0.5)' }}
