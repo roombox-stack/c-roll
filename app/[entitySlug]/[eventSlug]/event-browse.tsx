@@ -1519,13 +1519,17 @@ function DesktopVideoModal({
           }}
         >
           {/* ── Left: video player ──── */}
-          <div className="relative flex items-center justify-center bg-black" style={{ flex: '0 0 75%', height: '90vh' }}>
-            <div className="relative h-full w-full bg-black">
+          <div
+            className="relative bg-black"
+            style={{ flex: '0 0 75%', height: '90vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <div style={{ width: '100%', height: '100%' }}>
               {media.mux_playback_id ? (
                 <VideoPlayer
                   playbackId={media.mux_playback_id}
                   autoPlay
                   poster={media.thumbnail_url ?? undefined}
+                  fillHeight
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-sm text-gray-500">
