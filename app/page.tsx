@@ -301,9 +301,9 @@ export default async function HomePage() {
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-ink text-white">
       {/* Ambient stage-lighting glows — fixed so they don't scroll */}
-      <div aria-hidden className="pointer-events-none fixed left-1/2 top-[55vh] z-0 h-[400px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[140px]" style={{ background: 'rgba(255,107,0,0.20)' }} />
-      <div aria-hidden className="pointer-events-none fixed bottom-[15vh] left-[-80px] z-0 h-[300px] w-[500px] rounded-full blur-[120px]" style={{ background: 'rgba(220,80,0,0.14)' }} />
-      <div aria-hidden className="pointer-events-none fixed right-[-60px] top-[8vh] z-0 h-[250px] w-[400px] rounded-full blur-[110px]" style={{ background: 'rgba(255,140,0,0.10)' }} />
+      <div aria-hidden className="pointer-events-none fixed left-1/2 top-[55vh] z-0 h-[400px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[140px]" style={{ background: 'rgba(255,107,0,0.18)' }} />
+      <div aria-hidden className="pointer-events-none fixed bottom-[15vh] left-[-80px] z-0 h-[300px] w-[500px] rounded-full blur-[120px]" style={{ background: 'rgba(220,80,0,0.13)' }} />
+      <div aria-hidden className="pointer-events-none fixed right-[-60px] top-[8vh] z-0 h-[250px] w-[400px] rounded-full blur-[110px]" style={{ background: 'rgba(255,140,0,0.09)' }} />
 
       <Nav />
 
