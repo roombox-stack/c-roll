@@ -122,12 +122,6 @@ function EntityHeroThumb({
         </div>
       ) : null}
 
-      {isVideo && media.duration_sec ? (
-        <span className="absolute bottom-1.5 right-1.5 rounded bg-black/70 px-1.5 py-0.5 font-mono text-[9px] tabular-nums text-white">
-          {Math.floor(media.duration_sec / 60)}:{String(Math.round(media.duration_sec % 60)).padStart(2, '0')}
-        </span>
-      ) : null}
-
       {label ? (
         <span className="absolute inset-x-1.5 bottom-1.5 truncate text-[10px] font-medium text-white">
           {label}
