@@ -12,6 +12,22 @@ export function Footer() {
             <p className="mt-1 text-xs">The show, from everyone who was there.</p>
           </div>
 
+          <nav className="flex flex-wrap gap-x-6 gap-y-2 text-xs">
+            <Link href="/about" className="hover:text-white">About</Link>
+            <Link href="/why" className="hover:text-white">Why upload</Link>
+            <Link href="/contact" className="hover:text-white">Contact</Link>
+            <Link href="/request" className="hover:text-white">Request an event</Link>
+            <Link href="/claim" className="hover:text-white">For Artists</Link>
+            <Link href="/privacy" className="hover:text-white">Privacy</Link>
+            <Link href="/terms" className="hover:text-white">Terms</Link>
+            <Link href="/dmca" className="hover:text-white">DMCA</Link>
+          </nav>
+        </div>
+
+        <div className="mt-6 flex items-center justify-between">
+          <p className="text-xs text-gray-600">
+            © {new Date().getFullYear()} c·roll. Fan-uploaded content is owned by its creators.
+          </p>
           <a
             href="https://www.instagram.com/croll.app/"
             target="_blank"
@@ -24,21 +40,7 @@ export function Footer() {
             </svg>
             Instagram
           </a>
-
-          <nav className="flex flex-wrap gap-x-6 gap-y-2 text-xs">
-            <Link href="/about" className="hover:text-white">About</Link>
-            <Link href="/why" className="hover:text-white">Why upload</Link>
-            <Link href="/contact" className="hover:text-white">Contact</Link>
-            <Link href="/request" className="hover:text-white">Request an event</Link>
-            <Link href="/claim" className="hover:text-white">For Artists</Link>
-            <Link href="/privacy" className="hover:text-white">Privacy</Link>
-            <Link href="/terms" className="hover:text-white">Terms</Link>
-            <Link href="/dmca" className="hover:text-white">DMCA</Link>
-          </nav>
         </div>
-        <p className="mt-6 text-xs text-gray-600">
-          © {new Date().getFullYear()} c·roll. Fan-uploaded content is owned by its creators.
-        </p>
       </div>
     </footer>
   );
