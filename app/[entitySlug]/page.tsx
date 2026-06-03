@@ -17,7 +17,6 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { Nav } from '@/components/nav';
-import { HighlightsGrid } from '@/components/highlights-grid';
 import { Footer } from '@/components/footer';
 import { BLUR_DATA_URL } from '@/lib/blur-placeholder';
 import { type EntityType, type SectionTag } from '@/lib/types';
@@ -25,6 +24,13 @@ import { fetchEventHeroThumbs } from '@/lib/event-thumbs';
 import { FollowButton } from '@/components/follow-button';
 import { getCurrentUser } from '@/lib/auth';
 import { formatCount, formatEventDate } from '@/components/format';
+import {
+  EntityPageMediaWrapper,
+  EntityHeroGridWithModal,
+  EntityHighlightsGridWithModal,
+  type EntityMediaItem,
+  type EntityEventSummary,
+} from './entity-browse';
 
 export const dynamic = 'force-dynamic';
 
@@ -135,6 +141,28 @@ export async function generateMetadata({
   };
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function pickHeroGrid(pool: MediaRow[], n: number): MediaRow[] {
+  const picked: MediaRow[] = [];
+  const seenSections = new Set<string>();
+  for (const m of pool) {
+    if (picked.length >= n) break;
+    if (m.section_tag && !seenSections.has(m.section_tag)) {
+      seenSections.add(m.section_tag);
+      picked.push(m);
+    }
+  }
+  if (picked.length < n) {
+    const pickedIds = new Set(picked.map((m) => m.id));
+    for (const m of pool) {
+      if (picked.length >= n) break;
+      if (!pickedIds.has(m.id)) picked.push(m);
+    }
+  }
+  return picked.slice(0, n);
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function EntityPage({
@@ -183,9 +211,6 @@ export default async function EntityPage({
   const topMedia = (topMediaRes.data ?? []) as unknown as MediaRow[];
   const allMedia = (allMediaRes.data ?? []) as unknown as MediaRow[];
   const allEvents = (allEventsRes.data ?? []) as unknown as EventRow[];
-
-  // Map event_id → city so HeroGrid can show city on each card.
-  const eventCityMap = new Map<string, string>(allEvents.map((ev) => [ev.id, ev.city]));
 
   // Hero grid: use admin-pinned IDs when present, otherwise auto-select.
   const pinnedIds: string[] = Array.isArray(entity.hero_media_ids) ? entity.hero_media_ids : [];
@@ -268,7 +293,74 @@ export default async function EntityPage({
     url: `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/${entity.slug}`,
   };
 
+  const allMediaItems: EntityMediaItem[] = allMedia.map((m) => ({
+    id: m.id,
+    file_type: m.file_type,
+    storage_url: m.storage_url,
+    thumbnail_url: m.thumbnail_url,
+    mux_playback_id: m.mux_playback_id,
+    duration_sec: m.duration_sec,
+    song_tag: m.song_tag,
+    section_tag: m.section_tag,
+    caption: m.caption,
+    view_count: m.view_count,
+    like_count: m.like_count,
+    is_full_song: m.is_full_song,
+    event_id: m.event_id,
+    uploader_id: m.uploader_id,
+  }));
+
+  const heroMediaItems: EntityMediaItem[] = heroMedia.map((m) => ({
+    id: m.id,
+    file_type: m.file_type,
+    storage_url: m.storage_url,
+    thumbnail_url: m.thumbnail_url,
+    mux_playback_id: m.mux_playback_id,
+    duration_sec: m.duration_sec,
+    song_tag: m.song_tag,
+    section_tag: m.section_tag,
+    caption: m.caption,
+    view_count: m.view_count,
+    like_count: m.like_count,
+    is_full_song: m.is_full_song,
+    event_id: m.event_id,
+    uploader_id: m.uploader_id,
+  }));
+
+  const highlightsMediaItems: EntityMediaItem[] = highlightsMedia.map((m) => ({
+    id: m.id,
+    file_type: m.file_type,
+    storage_url: m.storage_url,
+    thumbnail_url: m.thumbnail_url,
+    mux_playback_id: m.mux_playback_id,
+    duration_sec: m.duration_sec,
+    song_tag: m.song_tag,
+    section_tag: m.section_tag,
+    caption: m.caption,
+    view_count: m.view_count,
+    like_count: m.like_count,
+    is_full_song: m.is_full_song,
+    event_id: m.event_id,
+    uploader_id: m.uploader_id,
+  }));
+
+  const eventSummaries: EntityEventSummary[] = allEvents.map((ev) => ({
+    id: ev.id,
+    slug: ev.slug,
+    name: ev.name,
+    venue_name: ev.venue_name,
+    city: ev.city,
+    event_date: ev.event_date,
+  }));
+
+  const eventCityPairs: [string, string][] = allEvents.map((ev) => [ev.id, ev.city]);
+
   return (
+    <EntityPageMediaWrapper
+      allMedia={allMediaItems}
+      entitySlug={entity.slug}
+      eventMap={eventSummaries}
+    >
     <div className="min-h-screen bg-ink text-white">
       <Nav />
 
@@ -393,7 +485,7 @@ export default async function EntityPage({
               <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.08em] text-white/35">
                 // FROM THE FLOOR TO THE UPPER DECK
               </p>
-              <HeroGrid media={heroMedia} entitySlug={entity.slug} eventCityMap={eventCityMap} />
+              <EntityHeroGridWithModal media={heroMediaItems} eventCityMap={eventCityPairs} />
             </div>
           </div>
         </div>
@@ -467,7 +559,7 @@ export default async function EntityPage({
                 </Link>
               </div>
             ) : (
-              <HighlightsGrid items={highlightsMedia} />
+              <EntityHighlightsGridWithModal items={highlightsMediaItems} />
             )}
           </div>
         </section>
@@ -575,6 +667,7 @@ export default async function EntityPage({
       />
       <Footer />
     </div>
+    </EntityPageMediaWrapper>
   );
 }
 
@@ -586,125 +679,6 @@ function RedEyebrow({ children }: { children: React.ReactNode }) {
     <p className="font-mono text-[10px] font-semibold uppercase tracking-widest text-croll">
       // {children}
     </p>
-  );
-}
-
-// ── Hero grid (3 columns × 2 rows) ───────────────────────────────────────────
-
-// Section badge labels for the hero grid. Keyed by the media `section_tag`
-// enum. Pre-cased final display copy — rendered WITHOUT a CSS `uppercase`
-// transform so the trailing "s" in "100s"/"200s" stays lowercase.
-const HERO_SECTION_LABELS: Record<SectionTag, string> = {
-  floor: 'FLOOR / PIT',
-  pit: 'FLOOR / PIT',
-  section_100: 'SEC 100s',
-  section_200: 'SEC 200s',
-  upper: 'UPPER DECK',
-  stage_left: 'STAGE LEFT',
-  stage_right: 'STAGE RIGHT',
-  seated: 'SEATED',
-  vip: 'VIP',
-  outside: 'OUTSIDE',
-  concourse: 'CONCOURSE',
-};
-
-// Pick `n` hero-grid clips, preferring section variety: take one clip from each
-// distinct section (in view-count order) first, then fill the rest by view
-// count. `pool` is expected to already be sorted view-count descending.
-function pickHeroGrid(pool: MediaRow[], n: number): MediaRow[] {
-  const picked: MediaRow[] = [];
-  const seenSections = new Set<string>();
-  for (const m of pool) {
-    if (picked.length >= n) break;
-    if (m.section_tag && !seenSections.has(m.section_tag)) {
-      seenSections.add(m.section_tag);
-      picked.push(m);
-    }
-  }
-  if (picked.length < n) {
-    const pickedIds = new Set(picked.map((m) => m.id));
-    for (const m of pool) {
-      if (picked.length >= n) break;
-      if (!pickedIds.has(m.id)) picked.push(m);
-    }
-  }
-  return picked.slice(0, n);
-}
-
-function HeroGrid({ media, entitySlug: _entitySlug, eventCityMap }: { media: MediaRow[]; entitySlug: string; eventCityMap: Map<string, string> }) {
-  const slots = Array.from({ length: 6 }, (_, i) => media[i] ?? null);
-  return (
-    <div className="grid grid-cols-3 grid-rows-2 gap-2">
-      {slots.map((m, i) => (
-        <HeroThumb key={m?.id ?? `empty-${i}`} media={m} city={m?.event_id ? (eventCityMap.get(m.event_id) ?? null) : null} />
-      ))}
-    </div>
-  );
-}
-
-function HeroThumb({ media, city }: { media: MediaRow | null; city: string | null }) {
-  if (!media) {
-    return <div className="aspect-[4/5] rounded-lg bg-white/5" />;
-  }
-  const thumb =
-    media.thumbnail_url ?? (media.file_type === 'photo' ? media.storage_url : null);
-  const isVideo = media.file_type === 'video';
-  const rawLabel = media.song_tag ?? media.caption ?? '';
-  const label = cleanLabel(rawLabel);
-
-  return (
-    <Link
-      href={`/watch/${media.id}`}
-      className="group relative block aspect-[4/5] overflow-hidden rounded-lg bg-smoke"
-    >
-      {thumb ? (
-        <Image
-          src={thumb}
-          alt={label ?? ''}
-          fill
-          sizes="160px"
-          className="object-cover transition group-hover:scale-105"
-          placeholder="blur"
-          blurDataURL={BLUR_DATA_URL}
-          unoptimized
-        />
-      ) : (
-        <div className="absolute inset-0 bg-gradient-to-br from-ash to-smoke" />
-      )}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/10" />
-
-      {/* City badge top-left */}
-      {city ? (
-        <span
-          className="absolute left-2 top-2 rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold tracking-widest"
-          style={{ backgroundColor: 'rgba(255,204,0,0.15)', color: '#FFCC00' }}
-        >
-          {city.toUpperCase()}
-        </span>
-      ) : null}
-
-      {isVideo ? (
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 transition group-hover:opacity-100">
-          <div className="rounded-full bg-white/90 p-2">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="black" aria-hidden>
-              <path d="M8 5v14l11-7z" />
-            </svg>
-          </div>
-        </div>
-      ) : null}
-
-      {isVideo && media.duration_sec ? (
-        <span className="absolute bottom-1.5 right-1.5 rounded bg-black/70 px-1.5 py-0.5 font-mono text-[9px] tabular-nums text-white">
-          {Math.floor(media.duration_sec / 60)}:{String(Math.round(media.duration_sec % 60)).padStart(2, '0')}
-        </span>
-      ) : null}
-
-      {label ? (
-        <span className="absolute inset-x-1.5 bottom-1.5 truncate text-[10px] font-medium text-white">
-          {label}
-        </span>
-      ) : null}
-    </Link>
   );
 }
 
