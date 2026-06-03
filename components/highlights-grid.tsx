@@ -157,7 +157,7 @@ function SmallCard({ media }: { media: HighlightItem }) {
   return (
     <div className="group relative overflow-hidden rounded-lg bg-smoke">
       <Link href={`/watch/${media.id}`} className="block">
-        <div className="relative aspect-video">
+        <div className="relative aspect-[3/4]">
           {thumb ? (
             <Image src={thumb} alt="" fill sizes="240px" className="object-cover" placeholder="blur" blurDataURL={BLUR_DATA_URL} unoptimized />
           ) : (
