@@ -14,8 +14,10 @@ import Link from 'next/link';
 import { deleteMedia, activateMedia } from './actions';
 import { HardDeleteButton } from './delete-button';
 import { SongTagEditor } from '@/components/admin/song-tag-editor';
+import { SectionTagEditor } from '@/components/admin/section-tag-editor';
 import { AdminMediaFilters } from '@/components/admin/media-filters';
 import { createAdminClient } from '@/lib/supabase/admin';
+import type { SectionTag } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,6 +40,7 @@ interface MediaRow {
   mux_playback_id: string | null;
   duration_sec: number | null;
   song_tag: string | null;
+  section_tag: SectionTag | null;
   caption: string | null;
   view_count: number;
   like_count: number;
@@ -55,10 +58,13 @@ interface MediaRow {
     | null;
 }
 
+type SortCol = 'created_at' | 'song_tag' | 'section_tag' | 'view_count';
+type SortDir = 'asc' | 'desc';
+
 export default async function AdminMediaPage({
   searchParams,
 }: {
-  searchParams: { status?: string; page?: string; entity?: string; event?: string };
+  searchParams: { status?: string; page?: string; entity?: string; event?: string; sort?: string; dir?: string };
 }) {
   const supabase = createAdminClient();
   const statusFilter = searchParams.status ?? 'all';
@@ -67,6 +73,8 @@ export default async function AdminMediaPage({
   const page = Math.max(1, Number(searchParams.page ?? '1'));
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
+  const sortCol: SortCol = (['created_at', 'song_tag', 'section_tag', 'view_count'].includes(searchParams.sort ?? '') ? searchParams.sort as SortCol : 'created_at');
+  const sortDir: SortDir = searchParams.dir === 'asc' ? 'asc' : 'desc';
 
   // Fetch all entities for the filter dropdown.
   const { data: entitiesRaw } = await supabase
@@ -79,10 +87,10 @@ export default async function AdminMediaPage({
   let query = supabase
     .from('media')
     .select(
-      'id, file_type, status, storage_url, thumbnail_url, mux_playback_id, duration_sec, song_tag, caption, view_count, like_count, created_at, uploader_id, upload_session, event:events(id, name, slug, setlist, entity_id, entity:entities(name, slug))',
+      'id, file_type, status, storage_url, thumbnail_url, mux_playback_id, duration_sec, song_tag, section_tag, caption, view_count, like_count, created_at, uploader_id, upload_session, event:events(id, name, slug, setlist, entity_id, entity:entities(name, slug))',
       { count: 'exact' },
     )
-    .order('created_at', { ascending: false })
+    .order(sortCol, { ascending: sortDir === 'asc' })
     .range(from, to);
 
   if (statusFilter !== 'all') {
@@ -99,11 +107,18 @@ export default async function AdminMediaPage({
   const total = count ?? 0;
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
-  function pageHref(p: number) {
+  function baseParams() {
     const params = new URLSearchParams();
     if (statusFilter !== 'all') params.set('status', statusFilter);
     if (entityFilter) params.set('entity', entityFilter);
     if (eventFilter) params.set('event', eventFilter);
+    if (sortCol !== 'created_at') params.set('sort', sortCol);
+    if (sortDir !== 'desc') params.set('dir', sortDir);
+    return params;
+  }
+
+  function pageHref(p: number) {
+    const params = baseParams();
     if (p > 1) params.set('page', String(p));
     const s = params.toString();
     return `/admin/media${s ? `?${s}` : ''}`;
@@ -116,6 +131,24 @@ export default async function AdminMediaPage({
     if (eventFilter) params.set('event', eventFilter);
     const str = params.toString();
     return `/admin/media${str ? `?${str}` : ''}`;
+  }
+
+  function sortHref(col: SortCol) {
+    const params = new URLSearchParams();
+    if (statusFilter !== 'all') params.set('status', statusFilter);
+    if (entityFilter) params.set('entity', entityFilter);
+    if (eventFilter) params.set('event', eventFilter);
+    params.set('sort', col);
+    // Toggle direction if already sorted by this col, else default desc (asc for text cols)
+    const defaultDir: SortDir = col === 'view_count' || col === 'created_at' ? 'desc' : 'asc';
+    const nextDir: SortDir = sortCol === col ? (sortDir === 'asc' ? 'desc' : 'asc') : defaultDir;
+    params.set('dir', nextDir);
+    return `/admin/media?${params.toString()}`;
+  }
+
+  function SortIndicator({ col }: { col: SortCol }) {
+    if (sortCol !== col) return <span className="ml-1 opacity-30">↕</span>;
+    return <span className="ml-1">{sortDir === 'asc' ? '↑' : '↓'}</span>;
   }
 
   return (
@@ -164,11 +197,29 @@ export default async function AdminMediaPage({
               <tr className="border-b border-ash bg-smoke text-left text-xs uppercase tracking-wider text-gray-500">
                 <th className="px-3 py-3">Preview</th>
                 <th className="px-3 py-3">Event / Entity</th>
+                <th className="px-3 py-3">
+                  <Link href={sortHref('song_tag')} className="inline-flex items-center hover:text-white">
+                    Song<SortIndicator col="song_tag" />
+                  </Link>
+                </th>
+                <th className="px-3 py-3">
+                  <Link href={sortHref('section_tag')} className="inline-flex items-center hover:text-white">
+                    Section<SortIndicator col="section_tag" />
+                  </Link>
+                </th>
                 <th className="px-3 py-3">Type</th>
                 <th className="px-3 py-3">Status</th>
-                <th className="px-3 py-3">Views</th>
+                <th className="px-3 py-3">
+                  <Link href={sortHref('view_count')} className="inline-flex items-center hover:text-white">
+                    Views<SortIndicator col="view_count" />
+                  </Link>
+                </th>
                 <th className="px-3 py-3">Uploader</th>
-                <th className="px-3 py-3">Uploaded</th>
+                <th className="px-3 py-3">
+                  <Link href={sortHref('created_at')} className="inline-flex items-center hover:text-white">
+                    Uploaded<SortIndicator col="created_at" />
+                  </Link>
+                </th>
                 <th className="px-3 py-3">Actions</th>
               </tr>
             </thead>
@@ -222,15 +273,24 @@ export default async function AdminMediaPage({
                           {ev.name}
                         </Link>
                       )}
+                    </td>
+
+                    {/* Song */}
+                    <td className="px-3 py-2">
                       {m.file_type === 'video' ? (
-                      <div className="mt-1">
                         <SongTagEditor
                           mediaId={m.id}
                           currentTag={m.song_tag}
                           setlist={ev?.setlist ?? null}
                         />
-                      </div>
-                      ) : null}
+                      ) : (
+                        <span className="text-[10px] text-gray-600">—</span>
+                      )}
+                    </td>
+
+                    {/* Section */}
+                    <td className="px-3 py-2">
+                      <SectionTagEditor mediaId={m.id} currentTag={m.section_tag} />
                     </td>
 
                     {/* Type */}

@@ -49,6 +49,18 @@ export async function setSongTag(id: string, songTag: string | null) {
   revalidatePath('/admin/moderation');
 }
 
+/** Set section_tag on a single media row. Pass null to clear. */
+export async function setSectionTag(id: string, sectionTag: string | null) {
+  const supabase = createAdminClient();
+  const normalized = sectionTag?.trim() || null;
+  const { error } = await supabase
+    .from('media')
+    .update({ section_tag: normalized })
+    .eq('id', id);
+  if (error) throw new Error(error.message);
+  revalidatePath('/admin/media');
+}
+
 /**
  * Apply song_tag to multiple media rows in one server action call. Used by
  * the per-event "Tag Media" bulk editor. Caller passes only the rows that
