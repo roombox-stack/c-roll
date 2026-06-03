@@ -101,6 +101,7 @@ export function EventBrowse({
   // Optimistic overrides: mediaId → song_tag
   const [tagOverrides, setTagOverrides] = useState<Map<string, string>>(() => new Map());
   const [tagError, setTagError] = useState<string | null>(null);
+  const [tagSuccess, setTagSuccess] = useState<'in' | 'out' | null>(null);
 
   // Lock body scroll while fullscreen overlay, desktop modal, or bottom sheet is open.
   useEffect(() => {
@@ -217,6 +218,12 @@ export function EventBrowse({
     setTagMediaId(null);
     // Optimistic update immediately
     setTagOverrides((prev) => new Map(prev).set(mediaId, song));
+    // Show success toast straight away — dismiss if the request fails
+    setTagSuccess('in');
+    const successTimer = setTimeout(() => {
+      setTagSuccess('out');
+      setTimeout(() => setTagSuccess(null), 400);
+    }, 1800);
     try {
       const { getOrCreateClientSessionToken } = await import('@/lib/session');
       const sessionToken = getOrCreateClientSessionToken();
@@ -226,11 +233,15 @@ export function EventBrowse({
         body: JSON.stringify({ song_tag: song, session_token: sessionToken }),
       });
       if (!res.ok && res.status !== 409) {
+        clearTimeout(successTimer);
+        setTagSuccess(null);
         setTagOverrides((prev) => { const m = new Map(prev); m.delete(mediaId); return m; });
         setTagError("Couldn't save tag, try again");
         setTimeout(() => setTagError(null), 3000);
       }
     } catch {
+      clearTimeout(successTimer);
+      setTagSuccess(null);
       setTagOverrides((prev) => { const m = new Map(prev); m.delete(mediaId); return m; });
       setTagError("Couldn't save tag, try again");
       setTimeout(() => setTagError(null), 3000);
@@ -273,6 +284,25 @@ export function EventBrowse({
         onSelect={(song) => submitTag(tagMediaId, song)}
         onClose={() => setTagMediaId(null)}
       />
+    ) : null}
+
+    {/* ── Tag success toast ────────────────────────────────────────────── */}
+    {tagSuccess ? (
+      <div
+        className="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium shadow-lg"
+        style={{
+          backgroundColor: '#14532d',
+          color: '#86efac',
+          border: '1px solid rgba(134,239,172,0.25)',
+          transition: 'opacity 400ms ease',
+          opacity: tagSuccess === 'out' ? 0 : 1,
+        }}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+        Tag saved
+      </div>
     ) : null}
 
     {/* ── Tag error toast ──────────────────────────────────────────────── */}
