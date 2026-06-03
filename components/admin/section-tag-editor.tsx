@@ -5,17 +5,10 @@ import { setSectionTag } from '@/app/admin/(shell)/media/actions';
 import type { SectionTag } from '@/lib/types';
 
 const SECTION_OPTIONS: { value: SectionTag; label: string }[] = [
-  { value: 'floor', label: 'Floor' },
-  { value: 'pit', label: 'Pit' },
-  { value: 'stage_left', label: 'Stage Left' },
-  { value: 'stage_right', label: 'Stage Right' },
-  { value: 'section_100', label: 'Section 100' },
-  { value: 'section_200', label: 'Section 200' },
-  { value: 'upper', label: 'Upper' },
+  { value: 'floor', label: 'Floor / Pit' },
+  { value: 'section_100', label: 'Lower Bowl' },
+  { value: 'upper', label: 'Upper Deck' },
   { value: 'vip', label: 'VIP' },
-  { value: 'seated', label: 'Seated' },
-  { value: 'concourse', label: 'Concourse' },
-  { value: 'outside', label: 'Outside' },
 ];
 
 const LABEL: Record<SectionTag, string> = Object.fromEntries(
