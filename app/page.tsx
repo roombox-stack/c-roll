@@ -789,7 +789,7 @@ function FeaturedShowPreview({
     <div className="mt-6 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
       {/* Left — hero clip preview */}
       <div className="relative overflow-hidden rounded-lg bg-black">
-        <div className="relative aspect-video">
+        <div className="relative aspect-[9/16]">
           {hero?.thumbnail_url ? (
             <Image
               src={hero.thumbnail_url}
