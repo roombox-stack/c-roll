@@ -68,8 +68,8 @@ export async function PATCH(
           ? `<p>You can search for their page on <a href="https://c-roll.app" style="color:#FFCC00">c-roll.app</a> — it'll appear on the site soon.</p>`
           : `<p>The show will appear on C-Roll soon — check back at <a href="https://c-roll.app" style="color:#FFCC00">c-roll.app</a>.</p>`;
 
-      resend.emails.send({
-        from: 'C-Roll <hello@c-roll.app>',
+      const emailResult = await resend.emails.send({
+        from: 'c-roll <notifications@c-roll.app>',
         to: request.requester_email,
         subject: 'Your C-Roll request was approved 🎉',
         html: `
@@ -84,7 +84,10 @@ export async function PATCH(
             <p style="color:#888">— The C-Roll team</p>
           </div>
         `,
-      }).catch((err: unknown) => console.error('approval email failed:', err));
+      });
+      if (emailResult.error) {
+        console.error('approval email failed:', emailResult.error);
+      }
     }
   }
 
