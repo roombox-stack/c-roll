@@ -235,17 +235,18 @@ export default async function EventPage({
               <div className="flex flex-col justify-center px-5 py-4">
                 <span className="text-xl font-semibold tabular-nums leading-none text-white">{formatCount(attendeeCount ?? 0)}</span>
                 <span className="mt-1 font-mono text-[10px] uppercase tracking-widest text-gray-500">Attendance</span>
-                <div className="mt-2.5">
-                  <AttendanceButton
-                    eventId={event.id}
-                    eventUrl={baseUrl}
-                    initiallyAttending={initiallyAttending}
-                    initialCount={attendeeCount ?? 0}
-                    isAuthed={!!currentUser}
-                    compact
-                  />
-                </div>
               </div>
+            </div>
+            {/* I Was There — sits below the stats box, left-aligned */}
+            <div className="mt-3">
+              <AttendanceButton
+                eventId={event.id}
+                eventUrl={baseUrl}
+                initiallyAttending={initiallyAttending}
+                initialCount={attendeeCount ?? 0}
+                isAuthed={!!currentUser}
+                compact
+              />
             </div>
           </div>
 
