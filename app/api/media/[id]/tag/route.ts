@@ -42,7 +42,7 @@ export async function POST(
   // Fetch the media row with its event's setlist.
   const { data: media, error: mediaErr } = await supabase
     .from('media')
-    .select('id, file_type, status, song_tag, event_id, events(setlist)')
+    .select('id, status, song_tag, event_id, events(setlist)')
     .eq('id', mediaId)
     .single();
 
@@ -51,9 +51,6 @@ export async function POST(
   }
   if (media.status !== 'active') {
     return NextResponse.json({ error: 'media not active' }, { status: 409 });
-  }
-  if ((media as unknown as { file_type: string }).file_type === 'photo') {
-    return NextResponse.json({ error: 'photos cannot have song tags' }, { status: 422 });
   }
 
   // Validate song exists in event setlist.
