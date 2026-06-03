@@ -3,6 +3,8 @@
 // Community-source a song tag on a media item.
 // - Validates the song exists in the event's setlist.
 // - One tag per (media_id, session_token) — 409 if already tagged.
+//   community_tags provides abuse prevention; if the table doesn't exist yet
+//   (migration pending) we skip the gate and continue.
 // - Only sets song_tag on the media row when it is currently null (never
 //   overwrites manual or auto tags).
 //
@@ -39,10 +41,11 @@ export async function POST(
 
   const supabase = createAdminClient();
 
-  // Fetch the media row with its event's setlist.
+  // Fetch the media row, then fetch the event setlist separately to avoid
+  // ambiguity with how PostgREST returns joined rows (object vs. array).
   const { data: media, error: mediaErr } = await supabase
     .from('media')
-    .select('id, status, song_tag, event_id, events(setlist)')
+    .select('id, status, song_tag, event_id')
     .eq('id', mediaId)
     .single();
 
@@ -53,8 +56,14 @@ export async function POST(
     return NextResponse.json({ error: 'media not active' }, { status: 409 });
   }
 
-  // Validate song exists in event setlist.
-  const rawSetlist = ((media.events as unknown) as { setlist: unknown } | null)?.setlist;
+  // Fetch the event setlist.
+  const { data: eventRow } = await supabase
+    .from('events')
+    .select('setlist')
+    .eq('id', (media as unknown as { event_id: string }).event_id)
+    .single();
+
+  const rawSetlist = (eventRow as unknown as { setlist: unknown } | null)?.setlist;
   const setlist: string[] = Array.isArray(rawSetlist)
     ? rawSetlist.filter((s): s is string => typeof s === 'string' && s.trim().length > 0)
     : [];
@@ -66,7 +75,9 @@ export async function POST(
     return NextResponse.json({ error: 'song not in setlist' }, { status: 422 });
   }
 
-  // Insert into community_tags — unique constraint on (media_id, session_token).
+  // Insert into community_tags for abuse prevention.
+  // PGRST205 = table not in schema cache (migration not yet applied) — skip the gate.
+  // 23505     = unique violation (session already tagged this clip) — return 409.
   const { error: insertErr } = await supabase.from('community_tags').insert({
     media_id: mediaId,
     session_token,
@@ -77,7 +88,15 @@ export async function POST(
     if (insertErr.code === '23505') {
       return NextResponse.json({ error: 'already tagged' }, { status: 409 });
     }
-    return NextResponse.json({ error: 'insert failed' }, { status: 500 });
+    // Any error other than "table missing" is unexpected — bail out.
+    const tableMissing =
+      insertErr.code === 'PGRST205' ||
+      insertErr.message?.includes('community_tags') ||
+      insertErr.message?.includes('42P01');
+    if (!tableMissing) {
+      return NextResponse.json({ error: 'insert failed' }, { status: 500 });
+    }
+    // Table not yet created — fall through and still apply the tag.
   }
 
   // Update media.song_tag only when currently null.
@@ -93,7 +112,7 @@ export async function POST(
     return NextResponse.json({ error: 'update failed' }, { status: 500 });
   }
 
-  // If updated is null the media row already had a tag — that's fine, return current state.
+  // If updated is null the media row already had a tag — return current state.
   if (!updated) {
     const { data: current } = await supabase
       .from('media')
