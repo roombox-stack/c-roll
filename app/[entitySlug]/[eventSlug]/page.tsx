@@ -219,26 +219,26 @@ export default async function EventPage({
             </div>
             </div>
 
-            {/* Stats bar — unified for all screen sizes */}
-            <div className="mt-4 flex items-stretch divide-x divide-white/10 rounded-xl border border-white/10 bg-white/[0.03]">
-              {/* Clips */}
-              <div className="flex flex-col justify-center px-5 py-4">
-                <span className="text-xl font-semibold tabular-nums leading-none text-white">{formatCount(event.upload_count)}</span>
-                <span className="mt-1 font-mono text-[10px] uppercase tracking-widest text-gray-500">Clips</span>
+            {/* Stats bar + I Was There — right-column group */}
+            <div className="flex flex-col items-end gap-3 mt-4 lg:mt-0">
+              <div className="flex items-stretch divide-x divide-white/10 rounded-xl border border-white/10 bg-white/[0.03]">
+                {/* Clips */}
+                <div className="flex flex-col justify-center px-5 py-4">
+                  <span className="text-xl font-semibold tabular-nums leading-none text-white">{formatCount(event.upload_count)}</span>
+                  <span className="mt-1 font-mono text-[10px] uppercase tracking-widest text-gray-500">Clips</span>
+                </div>
+                {/* Contributors */}
+                <div className="flex flex-col justify-center px-5 py-4">
+                  <span className="text-xl font-semibold tabular-nums leading-none text-white">{formatCount(contribKeys.size)}</span>
+                  <span className="mt-1 font-mono text-[10px] uppercase tracking-widest text-gray-500">Contributors</span>
+                </div>
+                {/* Attendance */}
+                <div className="flex flex-col justify-center px-5 py-4">
+                  <span className="text-xl font-semibold tabular-nums leading-none text-white">{formatCount(attendeeCount ?? 0)}</span>
+                  <span className="mt-1 font-mono text-[10px] uppercase tracking-widest text-gray-500">Attendance</span>
+                </div>
               </div>
-              {/* Contributors */}
-              <div className="flex flex-col justify-center px-5 py-4">
-                <span className="text-xl font-semibold tabular-nums leading-none text-white">{formatCount(contribKeys.size)}</span>
-                <span className="mt-1 font-mono text-[10px] uppercase tracking-widest text-gray-500">Contributors</span>
-              </div>
-              {/* Attendance */}
-              <div className="flex flex-col justify-center px-5 py-4">
-                <span className="text-xl font-semibold tabular-nums leading-none text-white">{formatCount(attendeeCount ?? 0)}</span>
-                <span className="mt-1 font-mono text-[10px] uppercase tracking-widest text-gray-500">Attendance</span>
-              </div>
-            </div>
-            {/* I Was There — sits below the stats box, left-aligned */}
-            <div className="mt-3">
+              {/* I Was There — below stats, right-aligned to match the box */}
               <AttendanceButton
                 eventId={event.id}
                 eventUrl={baseUrl}
