@@ -299,16 +299,16 @@ export default async function HomePage() {
   const heroBgImage = '/hero-home.jpg';
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-ink text-white">
-      {/* Ambient stage-lighting glows */}
-      <div aria-hidden className="pointer-events-none absolute left-1/2 top-[55%] z-0 h-[400px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[120px]" style={{ background: 'rgba(255,107,0,0.18)' }} />
-      <div aria-hidden className="pointer-events-none absolute bottom-[20%] left-[-80px] z-0 h-[300px] w-[500px] rounded-full blur-[100px]" style={{ background: 'rgba(220,80,0,0.12)' }} />
-      <div aria-hidden className="pointer-events-none absolute right-[-60px] top-[8%] z-0 h-[250px] w-[400px] rounded-full blur-[90px]" style={{ background: 'rgba(255,140,0,0.08)' }} />
+    <div className="relative min-h-screen overflow-x-hidden bg-ink text-white">
+      {/* Ambient stage-lighting glows — fixed so they don't scroll */}
+      <div aria-hidden className="pointer-events-none fixed left-1/2 top-[55vh] z-0 h-[400px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[120px]" style={{ background: 'rgba(255,107,0,0.25)' }} />
+      <div aria-hidden className="pointer-events-none fixed bottom-[15vh] left-[-80px] z-0 h-[300px] w-[500px] rounded-full blur-[100px]" style={{ background: 'rgba(220,80,0,0.18)' }} />
+      <div aria-hidden className="pointer-events-none fixed right-[-60px] top-[8vh] z-0 h-[250px] w-[400px] rounded-full blur-[90px]" style={{ background: 'rgba(255,140,0,0.13)' }} />
 
       <Nav />
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section className="relative z-[1] overflow-hidden bg-ink">
+      <section className="relative z-[1] overflow-hidden">
         {heroBgImage ? (
           <Image
             src={heroBgImage}
