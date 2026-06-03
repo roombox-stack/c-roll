@@ -16,6 +16,7 @@ export function Footer() {
             <Link href="/about" className="hover:text-white">About</Link>
             <Link href="/why" className="hover:text-white">Why upload</Link>
             <Link href="/contact" className="hover:text-white">Contact</Link>
+            <Link href="/request" className="hover:text-white">Request an event</Link>
             <Link href="/claim" className="hover:text-white">For Artists</Link>
             <Link href="/privacy" className="hover:text-white">Privacy</Link>
             <Link href="/terms" className="hover:text-white">Terms</Link>
