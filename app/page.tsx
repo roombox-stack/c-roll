@@ -299,11 +299,16 @@ export default async function HomePage() {
   const heroBgImage = '/hero-home.jpg';
 
   return (
-    <div className="min-h-screen bg-ink text-white">
+    <div className="relative min-h-screen overflow-hidden bg-ink text-white">
+      {/* Ambient stage-lighting glows */}
+      <div aria-hidden className="pointer-events-none absolute left-1/2 top-[55%] z-0 h-[400px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[120px]" style={{ background: 'rgba(255,107,0,0.18)' }} />
+      <div aria-hidden className="pointer-events-none absolute bottom-[20%] left-[-80px] z-0 h-[300px] w-[500px] rounded-full blur-[100px]" style={{ background: 'rgba(220,80,0,0.12)' }} />
+      <div aria-hidden className="pointer-events-none absolute right-[-60px] top-[8%] z-0 h-[250px] w-[400px] rounded-full blur-[90px]" style={{ background: 'rgba(255,140,0,0.08)' }} />
+
       <Nav />
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-ink">
+      <section className="relative z-[1] overflow-hidden bg-ink">
         {heroBgImage ? (
           <Image
             src={heroBgImage}
@@ -367,7 +372,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <main className="mx-auto max-w-7xl space-y-24 px-4 py-20">
+      <main className="relative z-[1] mx-auto max-w-7xl space-y-24 px-4 py-20">
         {/* ── Clips everyone's watching ───────────────────────────────────── */}
         {trending.length > 0 ? (
           <section>
@@ -518,7 +523,7 @@ export default async function HomePage() {
         ) : null}
       </main>
 
-      <div className="border-t border-white/5 py-8 text-center">
+      <div className="relative z-[1] border-t border-white/5 py-8 text-center">
         <p className="text-sm text-gray-600">
           Don't see your artist or team?{' '}
           <Link href="/request" className="text-gray-400 underline hover:text-white">
