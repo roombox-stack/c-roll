@@ -769,7 +769,7 @@ function FeaturedShowPreview({
     }
   }
 
-  const sectionsToShow: SectionTag[] = ['floor', 'section_100', 'section_200', 'upper', 'stage_left', 'stage_right'];
+  const sectionsToShow: SectionTag[] = ['floor', 'section_100', 'upper', 'vip'];
 
   return (
     <div className="mt-6 grid gap-4 lg:grid-cols-[1.4fr_1fr]">

@@ -53,21 +53,16 @@ const SORT_OPTIONS: Array<{ value: SortKey; label: string }> = [
 const SECTION_FILTERS: SectionTag[] = [
   'floor',
   'section_100',
-  'section_200',
   'upper',
-  'stage_left',
-  'stage_right',
+  'vip',
 ];
 
 // Used by the "Floor/Pit first" sort to bias floor / pit clips to the top.
 const FLOOR_RANK: Record<string, number> = {
   floor: 0,
-  pit: 0,
   section_100: 1,
-  section_200: 2,
-  upper: 3,
-  stage_left: 4,
-  stage_right: 5,
+  upper: 2,
+  vip: 3,
 };
 
 function cleanLabel(s: string | null | undefined): string | null {
