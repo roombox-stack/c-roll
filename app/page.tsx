@@ -518,6 +518,15 @@ export default async function HomePage() {
         ) : null}
       </main>
 
+      <div className="border-t border-white/5 py-8 text-center">
+        <p className="text-sm text-gray-600">
+          Don't see your artist or team?{' '}
+          <Link href="/request" className="text-gray-400 underline hover:text-white">
+            Request them →
+          </Link>
+        </p>
+      </div>
+
       <Footer />
     </div>
   );

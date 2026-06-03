@@ -591,6 +591,15 @@ export default async function EntityPage({
         ) : null}
 
         {/* ── Recent shows ────────────────────────────────────────────── */}
+        {recentEvents.length === 0 ? (
+          <p className="text-sm text-gray-600">
+            Missing a show?{' '}
+            <Link href="/request" className="text-gray-500 underline hover:text-white">
+              Request it be added →
+            </Link>
+          </p>
+        ) : null}
+
         {recentEvents.length > 0 ? (
           <section>
             <div className="flex items-end justify-between gap-4">
