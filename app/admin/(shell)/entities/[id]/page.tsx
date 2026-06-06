@@ -38,11 +38,13 @@ export default async function EditEntityPage({
   const [{ data: entity }, { data: mediaRows }, { data: eventsRaw }] = await Promise.all([
     supabase.from('entities').select('*').eq('id', params.id).maybeSingle(),
     // All active media for this entity — used by both pickers.
+    // Use entity_id directly (not via events inner join) so that clips
+    // uploaded without an event association are included.
     supabase
       .from('media')
-      .select('id, file_type, storage_url, thumbnail_url, song_tag, duration_sec, view_count, event:events!inner(entity_id, city)')
+      .select('id, file_type, storage_url, thumbnail_url, song_tag, duration_sec, view_count, event:events(city)')
       .eq('status', 'active')
-      .eq('events.entity_id', params.id)
+      .eq('entity_id', params.id)
       .order('view_count', { ascending: false })
       .limit(120),
     // Events for the upload picker.
@@ -64,7 +66,7 @@ export default async function EditEntityPage({
     song_tag: string | null;
     duration_sec: number | null;
     view_count: number;
-    event: { entity_id: string; city: string } | { entity_id: string; city: string }[] | null;
+    event: { city: string } | { city: string }[] | null;
   };
 
   const rawMedia = (mediaRows ?? []) as unknown as RawMedia[];
