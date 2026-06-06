@@ -5,8 +5,7 @@
 // The entity desktop modal mirrors the event-browse DesktopMediaModal but adds
 // a "Watch this show" link and scopes "More from this show" to the same event.
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { BLUR_DATA_URL } from '@/lib/blur-placeholder';
@@ -416,12 +415,124 @@ function EntityModalShareButton({ mediaId, entitySlug: _entitySlug }: { mediaId:
 
 import { createContext, useContext } from 'react';
 
-const EntityModalContext = createContext<(id: string) => void>(() => {});
+interface EntityMediaCtx {
+  openModal: (id: string) => void;
+  openFullscreen: (id: string) => void;
+}
+const EntityMediaContext = createContext<EntityMediaCtx>({
+  openModal: () => {},
+  openFullscreen: () => {},
+});
+
+// ── Mobile fullscreen video overlay (mirrors event-browse VideoFullscreenOverlay) ──
+
+function MobileVideoFullscreen({
+  media,
+  allMedia,
+  onClose,
+}: {
+  media: EntityMediaItem;
+  allMedia: EntityMediaItem[];
+  onClose: () => void;
+}) {
+  const [currentId, setCurrentId] = useState(media.id);
+  const current = allMedia.find((m) => m.id === currentId) ?? media;
+  const videoList = allMedia.filter((m) => m.file_type === 'video');
+  const idx = videoList.findIndex((m) => m.id === currentId);
+  const hasPrev = idx > 0;
+  const hasNext = idx < videoList.length - 1;
+
+  const touchStartY = useRef(0);
+  function onTouchStart(e: React.TouchEvent) { touchStartY.current = e.touches[0].clientY; }
+  function onTouchEnd(e: React.TouchEvent) { if (e.changedTouches[0].clientY - touchStartY.current > 60) onClose(); }
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose();
+      if (e.key === 'ArrowLeft' && hasPrev) setCurrentId(videoList[idx - 1].id);
+      if (e.key === 'ArrowRight' && hasNext) setCurrentId(videoList[idx + 1].id);
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [hasPrev, hasNext, idx, videoList, onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex flex-col bg-black"
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+    >
+      <div className="absolute inset-0">
+        {current.mux_playback_id ? (
+          <VideoPlayer
+            playbackId={current.mux_playback_id}
+            autoPlay
+            poster={current.thumbnail_url ?? undefined}
+            fullscreen
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-sm text-gray-500">
+            Video unavailable
+          </div>
+        )}
+      </div>
+
+      {/* Close */}
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Close"
+        className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white"
+        style={{ fontSize: '20px' }}
+      >×</button>
+
+      {/* Prev / Next */}
+      {hasPrev ? (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setCurrentId(videoList[idx - 1].id); }}
+          aria-label="Previous video"
+          className="absolute left-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
+      ) : null}
+      {hasNext ? (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setCurrentId(videoList[idx + 1].id); }}
+          aria-label="Next video"
+          className="absolute right-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </button>
+      ) : null}
+
+      {/* Metadata strip */}
+      <div
+        className="absolute inset-x-0 bottom-0 px-4 pb-6 pt-16"
+        style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%)' }}
+      >
+        {current.song_tag ? (
+          <span className="mb-2 block rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-white/80 w-fit">
+            {cleanLabel(current.song_tag)}
+          </span>
+        ) : null}
+        <div className="flex items-center justify-between gap-3">
+          <span className="font-mono text-xs text-gray-400">{formatCount(current.view_count)} views</span>
+          <CardLikeButton mediaId={current.id} initialLikeCount={current.like_count} />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ── EntityPageMediaWrapper ────────────────────────────────────────────────────
-// Top-level client wrapper that owns modal state and provides openModal via
-// context. Wrap the entire page content (below Nav) with this component so both
-// the hero grid and the highlights section can share state.
+// Top-level client wrapper that owns modal + fullscreen state.
 
 export function EntityPageMediaWrapper({
   allMedia,
@@ -435,18 +546,25 @@ export function EntityPageMediaWrapper({
   children: React.ReactNode;
 }) {
   const [desktopModalId, setDesktopModalId] = useState<string | null>(null);
+  const [fullscreenId, setFullscreenId] = useState<string | null>(null);
   const eventMapObj = new Map(eventMap.map((e) => [e.id, e]));
 
   useEffect(() => {
-    document.body.style.overflow = desktopModalId ? 'hidden' : '';
+    document.body.style.overflow = (desktopModalId || fullscreenId) ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
-  }, [desktopModalId]);
+  }, [desktopModalId, fullscreenId]);
 
   const dm = desktopModalId ? allMedia.find((m) => m.id === desktopModalId) ?? null : null;
   const dmIdx = desktopModalId ? allMedia.findIndex((m) => m.id === desktopModalId) : -1;
+  const fsMedia = fullscreenId ? allMedia.find((m) => m.id === fullscreenId) ?? null : null;
+
+  const ctx: EntityMediaCtx = {
+    openModal: useCallback((id) => setDesktopModalId(id), []),
+    openFullscreen: useCallback((id) => setFullscreenId(id), []),
+  };
 
   return (
-    <EntityModalContext.Provider value={(id) => setDesktopModalId(id)}>
+    <EntityMediaContext.Provider value={ctx}>
       {children}
       {dm ? (
         <EntityDesktopModal
@@ -460,12 +578,18 @@ export function EntityPageMediaWrapper({
           onNavigate={(id) => setDesktopModalId(id)}
         />
       ) : null}
-    </EntityModalContext.Provider>
+      {fsMedia ? (
+        <MobileVideoFullscreen
+          media={fsMedia}
+          allMedia={allMedia}
+          onClose={() => setFullscreenId(null)}
+        />
+      ) : null}
+    </EntityMediaContext.Provider>
   );
 }
 
 // ── EntityHeroGridWithModal ───────────────────────────────────────────────────
-// Drop-in replacement for the server-side HeroGrid that opens the modal.
 
 export function EntityHeroGridWithModal({
   media,
@@ -474,41 +598,42 @@ export function EntityHeroGridWithModal({
   media: EntityMediaItem[];
   eventCityMap: [string, string][];
 }) {
-  const openModal = useContext(EntityModalContext);
-  const router = useRouter();
+  const { openModal, openFullscreen } = useContext(EntityMediaContext);
   const cityMap = new Map(eventCityMap);
 
   const handleItemClick = useCallback((id: string) => {
-    // On mobile (no md breakpoint), navigate to the watch page.
-    // On desktop, open the modal.
+    const item = media.find((m) => m.id === id);
     if (window.matchMedia('(min-width: 768px)').matches) {
       openModal(id);
+    } else if (item?.file_type === 'video') {
+      openFullscreen(id);
     } else {
-      router.push(`/watch/${id}`);
+      openModal(id); // photos fallback — desktop modal is hidden on mobile but navigates ok
     }
-  }, [openModal, router]);
+  }, [openModal, openFullscreen, media]);
 
   return <EntityHeroGrid media={media} eventCityMap={cityMap} onItemClick={handleItemClick} />;
 }
 
 // ── EntityHighlightsGridWithModal ─────────────────────────────────────────────
-// Drop-in replacement for HighlightsGrid in the fan highlights section.
 
 export function EntityHighlightsGridWithModal({
   items,
 }: {
   items: EntityMediaItem[];
 }) {
-  const openModal = useContext(EntityModalContext);
-  const router = useRouter();
+  const { openModal, openFullscreen } = useContext(EntityMediaContext);
 
   const handleItemClick = useCallback((id: string) => {
+    const item = items.find((m) => m.id === id);
     if (window.matchMedia('(min-width: 768px)').matches) {
       openModal(id);
+    } else if (item?.file_type === 'video') {
+      openFullscreen(id);
     } else {
-      router.push(`/watch/${id}`);
+      openModal(id);
     }
-  }, [openModal, router]);
+  }, [openModal, openFullscreen, items]);
 
   return <HighlightsGrid items={items} onItemClick={handleItemClick} />;
 }
