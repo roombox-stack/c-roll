@@ -50,13 +50,14 @@ interface MediaRow {
   created_at: string;
   uploader_id: string | null;
   upload_session: string | null;
+  // Direct entity join (reflects current entity_id on the media row itself)
+  entity_direct: { name: string; slug: string } | null;
   event:
     | {
         id: string;
         name: string;
         slug: string;
         setlist: string[] | null;
-        entity: { name: string; slug: string } | null;
       }
     | null;
 }
@@ -90,7 +91,7 @@ export default async function AdminMediaPage({
   let query = supabase
     .from('media')
     .select(
-      'id, entity_id, file_type, status, storage_url, thumbnail_url, mux_playback_id, duration_sec, song_tag, section_tag, caption, view_count, like_count, created_at, uploader_id, upload_session, event:events(id, name, slug, setlist, entity:entities(name, slug))',
+      'id, entity_id, file_type, status, storage_url, thumbnail_url, mux_playback_id, duration_sec, song_tag, section_tag, caption, view_count, like_count, created_at, uploader_id, upload_session, entity_direct:entities(name, slug), event:events(id, name, slug, setlist)',
       { count: 'exact' },
     )
     .order(sortCol, { ascending: sortDir === 'asc' })
@@ -230,11 +231,10 @@ export default async function AdminMediaPage({
             <tbody className="divide-y divide-ash/50">
               {items.map((m) => {
                 const ev = Array.isArray(m.event) ? (m.event as unknown as MediaRow['event'][])[0] : m.event;
-                const entity = ev
-                  ? Array.isArray(ev.entity)
-                    ? (ev.entity as unknown as { name: string; slug: string }[])[0]
-                    : ev.entity
-                  : null;
+                // entity_direct joins entities via media.entity_id directly — always current.
+                const entityDirect = Array.isArray(m.entity_direct)
+                  ? (m.entity_direct as unknown as { name: string; slug: string }[])[0]
+                  : m.entity_direct;
                 const thumb = m.thumbnail_url ?? (m.file_type === 'photo' ? m.storage_url : null);
                 const isStuck = m.status === 'uploading';
                 const isActive = m.status === 'active';
@@ -262,7 +262,7 @@ export default async function AdminMediaPage({
                       <EntityTagEditor
                         mediaId={m.id}
                         currentEntityId={m.entity_id ?? null}
-                        currentEntityName={entity?.name ?? null}
+                        currentEntityName={entityDirect?.name ?? null}
                         entities={entities}
                       />
                     </td>
