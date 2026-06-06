@@ -13,6 +13,7 @@ import {
 import { updateEntity } from '../actions';
 import { HeroPickerClient } from './hero-picker';
 import { HeroGridPicker, type HeroMediaOption } from './hero-grid-picker';
+import { HeroGridUploader, type EventOption } from './hero-grid-uploader';
 import { DangerZone } from './danger-zone';
 import { SavedToast } from '@/components/admin/saved-toast';
 
@@ -34,7 +35,7 @@ export default async function EditEntityPage({
 }) {
   const supabase = createAdminClient();
 
-  const [{ data: entity }, { data: mediaRows }] = await Promise.all([
+  const [{ data: entity }, { data: mediaRows }, { data: eventsRaw }] = await Promise.all([
     supabase.from('entities').select('*').eq('id', params.id).maybeSingle(),
     // All active media for this entity — used by both pickers.
     supabase
@@ -44,6 +45,13 @@ export default async function EditEntityPage({
       .eq('events.entity_id', params.id)
       .order('view_count', { ascending: false })
       .limit(120),
+    // Events for the upload picker.
+    supabase
+      .from('events')
+      .select('id, name, event_date, city')
+      .eq('entity_id', params.id)
+      .order('event_date', { ascending: false })
+      .limit(200),
   ]);
 
   if (!entity) notFound();
@@ -85,6 +93,8 @@ export default async function EditEntityPage({
   });
 
   const pinnedIds: string[] = Array.isArray(entity?.hero_media_ids) ? entity.hero_media_ids : [];
+
+  const events = (eventsRaw ?? []) as EventOption[];
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -131,11 +141,16 @@ export default async function EditEntityPage({
 
       {/* Hero grid picker — full width */}
       <div className="rounded-lg border border-ash bg-smoke p-4">
-        <h2 className="mb-1 text-sm font-semibold">Hero grid clips</h2>
-        <p className="mb-4 text-xs text-gray-500">
-          Pin up to 6 clips for the &ldquo;From the floor to the upper deck&rdquo; grid.
-          Leave empty to auto-select by view count.
-        </p>
+        <div className="mb-4 flex items-start justify-between gap-4">
+          <div>
+            <h2 className="mb-1 text-sm font-semibold">Hero grid clips</h2>
+            <p className="text-xs text-gray-500">
+              Pin up to 6 clips for the &ldquo;From the floor to the upper deck&rdquo; grid.
+              Leave empty to auto-select by view count.
+            </p>
+          </div>
+          <HeroGridUploader events={events} />
+        </div>
         <HeroGridPicker
           entityId={entity.id}
           mediaOptions={gridOptions}
