@@ -29,7 +29,7 @@ export function EventTagEditor({
 }) {
   const [open, setOpen] = useState(false);
   const [events, setEvents] = useState<EventOption[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // true until first fetch completes
   const [value, setValue] = useState<string>(currentEventId ?? '');
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -40,8 +40,8 @@ export function EventTagEditor({
     setLoading(true);
     fetch(`/api/admin/events-for-entity?entityId=${entityId}`)
       .then((r) => r.json())
-      .then((data: EventOption[]) => {
-        setEvents(data);
+      .then((data: unknown) => {
+        setEvents(Array.isArray(data) ? (data as EventOption[]) : []);
         setLoading(false);
       })
       .catch(() => setLoading(false));

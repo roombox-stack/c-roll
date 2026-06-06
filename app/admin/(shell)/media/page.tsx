@@ -89,7 +89,7 @@ export default async function AdminMediaPage({
   let query = supabase
     .from('media')
     .select(
-      'id, entity_id, file_type, status, storage_url, thumbnail_url, mux_playback_id, duration_sec, song_tag, section_tag, caption, view_count, like_count, created_at, uploader_id, upload_session, event:events(id, name, slug, setlist, entity_id, entity:entities(name, slug))',
+      'id, entity_id, file_type, status, storage_url, thumbnail_url, mux_playback_id, duration_sec, song_tag, section_tag, caption, view_count, like_count, created_at, uploader_id, upload_session, event:events(id, name, slug, setlist, entity:entities(name, slug))',
       { count: 'exact' },
     )
     .order(sortCol, { ascending: sortDir === 'asc' })
