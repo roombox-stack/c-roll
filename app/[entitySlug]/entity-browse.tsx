@@ -5,7 +5,8 @@
 // The entity desktop modal mirrors the event-browse DesktopMediaModal but adds
 // a "Watch this show" link and scopes "More from this show" to the same event.
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { BLUR_DATA_URL } from '@/lib/blur-placeholder';
@@ -474,8 +475,20 @@ export function EntityHeroGridWithModal({
   eventCityMap: [string, string][];
 }) {
   const openModal = useContext(EntityModalContext);
+  const router = useRouter();
   const cityMap = new Map(eventCityMap);
-  return <EntityHeroGrid media={media} eventCityMap={cityMap} onItemClick={openModal} />;
+
+  const handleItemClick = useCallback((id: string) => {
+    // On mobile (no md breakpoint), navigate to the watch page.
+    // On desktop, open the modal.
+    if (window.matchMedia('(min-width: 768px)').matches) {
+      openModal(id);
+    } else {
+      router.push(`/watch/${id}`);
+    }
+  }, [openModal, router]);
+
+  return <EntityHeroGrid media={media} eventCityMap={cityMap} onItemClick={handleItemClick} />;
 }
 
 // ── EntityHighlightsGridWithModal ─────────────────────────────────────────────
