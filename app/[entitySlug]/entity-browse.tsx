@@ -500,5 +500,15 @@ export function EntityHighlightsGridWithModal({
   items: EntityMediaItem[];
 }) {
   const openModal = useContext(EntityModalContext);
-  return <HighlightsGrid items={items} onItemClick={openModal} />;
+  const router = useRouter();
+
+  const handleItemClick = useCallback((id: string) => {
+    if (window.matchMedia('(min-width: 768px)').matches) {
+      openModal(id);
+    } else {
+      router.push(`/watch/${id}`);
+    }
+  }, [openModal, router]);
+
+  return <HighlightsGrid items={items} onItemClick={handleItemClick} />;
 }
