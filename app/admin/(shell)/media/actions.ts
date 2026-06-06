@@ -70,7 +70,13 @@ export async function setMediaEvent(id: string, eventId: string | null) {
       .from('media')
       .update({ event_id: null })
       .eq('id', id);
-    if (error) throw new Error(error.message);
+    if (error) {
+      // Likely means migration 0018 hasn't been applied yet.
+      if (error.message.includes('not-null') || error.message.includes('violates not-null')) {
+        throw new Error('Cannot clear event: run migration 0018_nullable_event_id.sql in Supabase first.');
+      }
+      throw new Error(error.message);
+    }
   }
   revalidatePath('/admin/media');
 }
