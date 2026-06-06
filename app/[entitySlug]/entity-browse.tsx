@@ -113,7 +113,7 @@ function EntityHeroThumb({
       ) : null}
 
       {isVideo ? (
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 transition group-hover:opacity-100">
+        <div className="absolute inset-0 flex items-center justify-center transition group-hover:scale-110">
           <div className="rounded-full bg-white/90 p-2">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="black" aria-hidden>
               <path d="M8 5v14l11-7z" />
