@@ -16,6 +16,7 @@ import { HardDeleteButton } from './delete-button';
 import { SongTagEditor } from '@/components/admin/song-tag-editor';
 import { SectionTagEditor } from '@/components/admin/section-tag-editor';
 import { EventTagEditor } from '@/components/admin/event-tag-editor';
+import { EntityTagEditor } from '@/components/admin/entity-tag-editor';
 import { AdminMediaFilters } from '@/components/admin/media-filters';
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { SectionTag } from '@/lib/types';
@@ -256,17 +257,14 @@ export default async function AdminMediaPage({
                       )}
                     </td>
 
-                    {/* Entity */}
-                    <td className="max-w-[140px] px-3 py-2">
-                      {entity && (
-                        <Link
-                          href={`/${entity.slug}`}
-                          className="block truncate text-xs text-gray-400 hover:text-white"
-                          target="_blank"
-                        >
-                          {entity.name}
-                        </Link>
-                      )}
+                    {/* Entity — editable */}
+                    <td className="max-w-[160px] px-3 py-2">
+                      <EntityTagEditor
+                        mediaId={m.id}
+                        currentEntityId={m.entity_id ?? null}
+                        currentEntityName={entity?.name ?? null}
+                        entities={entities}
+                      />
                     </td>
 
                     {/* Event — editable */}

@@ -49,6 +49,18 @@ export async function setSongTag(id: string, songTag: string | null) {
   revalidatePath('/admin/moderation');
 }
 
+/** Set the entity on a media row. */
+export async function setMediaEntity(id: string, entityId: string) {
+  if (!entityId) throw new Error('entityId required');
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from('media')
+    .update({ entity_id: entityId })
+    .eq('id', id);
+  if (error) throw new Error(error.message);
+  revalidatePath('/admin/media');
+}
+
 /** Set (or clear) the event association on a media row. */
 export async function setMediaEvent(id: string, eventId: string | null) {
   const supabase = createAdminClient();
