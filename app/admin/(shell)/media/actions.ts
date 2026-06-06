@@ -49,6 +49,32 @@ export async function setSongTag(id: string, songTag: string | null) {
   revalidatePath('/admin/moderation');
 }
 
+/** Set (or clear) the event association on a media row. */
+export async function setMediaEvent(id: string, eventId: string | null) {
+  const supabase = createAdminClient();
+  // When attaching to a new event, also sync entity_id from the event.
+  if (eventId) {
+    const { data: event } = await supabase
+      .from('events')
+      .select('id, entity_id')
+      .eq('id', eventId)
+      .single();
+    if (!event) throw new Error('event not found');
+    const { error } = await supabase
+      .from('media')
+      .update({ event_id: event.id, entity_id: event.entity_id })
+      .eq('id', id);
+    if (error) throw new Error(error.message);
+  } else {
+    const { error } = await supabase
+      .from('media')
+      .update({ event_id: null })
+      .eq('id', id);
+    if (error) throw new Error(error.message);
+  }
+  revalidatePath('/admin/media');
+}
+
 /** Set section_tag on a single media row. Pass null to clear. */
 export async function setSectionTag(id: string, sectionTag: string | null) {
   const supabase = createAdminClient();

@@ -15,6 +15,7 @@ import { deleteMedia, activateMedia } from './actions';
 import { HardDeleteButton } from './delete-button';
 import { SongTagEditor } from '@/components/admin/song-tag-editor';
 import { SectionTagEditor } from '@/components/admin/section-tag-editor';
+import { EventTagEditor } from '@/components/admin/event-tag-editor';
 import { AdminMediaFilters } from '@/components/admin/media-filters';
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { SectionTag } from '@/lib/types';
@@ -33,6 +34,7 @@ const STATUS_OPTIONS = [
 
 interface MediaRow {
   id: string;
+  entity_id: string;
   file_type: 'photo' | 'video';
   status: string;
   storage_url: string;
@@ -87,7 +89,7 @@ export default async function AdminMediaPage({
   let query = supabase
     .from('media')
     .select(
-      'id, file_type, status, storage_url, thumbnail_url, mux_playback_id, duration_sec, song_tag, section_tag, caption, view_count, like_count, created_at, uploader_id, upload_session, event:events(id, name, slug, setlist, entity_id, entity:entities(name, slug))',
+      'id, entity_id, file_type, status, storage_url, thumbnail_url, mux_playback_id, duration_sec, song_tag, section_tag, caption, view_count, like_count, created_at, uploader_id, upload_session, event:events(id, name, slug, setlist, entity_id, entity:entities(name, slug))',
       { count: 'exact' },
     )
     .order(sortCol, { ascending: sortDir === 'asc' })
@@ -196,7 +198,8 @@ export default async function AdminMediaPage({
             <thead>
               <tr className="border-b border-ash bg-smoke text-left text-xs uppercase tracking-wider text-gray-500">
                 <th className="px-3 py-3">Preview</th>
-                <th className="px-3 py-3">Event / Entity</th>
+                <th className="px-3 py-3">Entity</th>
+                <th className="px-3 py-3">Event</th>
                 <th className="px-3 py-3">
                   <Link href={sortHref('song_tag')} className="inline-flex items-center hover:text-white">
                     Song<SortIndicator col="song_tag" />
@@ -253,8 +256,8 @@ export default async function AdminMediaPage({
                       )}
                     </td>
 
-                    {/* Event / Entity */}
-                    <td className="max-w-[200px] px-3 py-2">
+                    {/* Entity */}
+                    <td className="max-w-[140px] px-3 py-2">
                       {entity && (
                         <Link
                           href={`/${entity.slug}`}
@@ -264,15 +267,16 @@ export default async function AdminMediaPage({
                           {entity.name}
                         </Link>
                       )}
-                      {ev && (
-                        <Link
-                          href={`/${entity?.slug ?? ''}/${ev.slug}`}
-                          className="block truncate text-xs text-white hover:underline"
-                          target="_blank"
-                        >
-                          {ev.name}
-                        </Link>
-                      )}
+                    </td>
+
+                    {/* Event — editable */}
+                    <td className="max-w-[200px] px-3 py-2">
+                      <EventTagEditor
+                        mediaId={m.id}
+                        entityId={m.entity_id}
+                        currentEventId={ev?.id ?? null}
+                        currentEventName={ev?.name ?? null}
+                      />
                     </td>
 
                     {/* Song */}
