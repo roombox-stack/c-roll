@@ -361,11 +361,16 @@ export default async function EntityPage({
       entitySlug={entity.slug}
       eventMap={eventSummaries}
     >
-    <div className="min-h-screen bg-ink text-white">
+    <div className="relative min-h-screen overflow-x-hidden bg-ink text-white">
+      {/* Ambient stage-lighting glows */}
+      <div aria-hidden className="pointer-events-none fixed left-1/2 top-[55vh] z-0 h-[400px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[140px]" style={{ background: 'rgba(255,107,0,0.14)' }} />
+      <div aria-hidden className="pointer-events-none fixed bottom-[15vh] left-0 z-0 h-[180px] w-[300px] -translate-x-[30%] rounded-full blur-[120px]" style={{ background: 'rgba(220,80,0,0.13)' }} />
+      <div aria-hidden className="pointer-events-none fixed right-[-60px] top-[8vh] z-0 h-[250px] w-[400px] rounded-full blur-[110px]" style={{ background: 'rgba(255,140,0,0.09)' }} />
+
       <Nav />
 
       {/* ── Hero ────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-ink">
+      <section className="relative z-[1] overflow-hidden">
         {/* Background: concert photo at high opacity — cinematic, movie-poster feel */}
         {entity.hero_image_url ? (
           <Image
@@ -492,7 +497,7 @@ export default async function EntityPage({
       </section>
 
       {/* ── Stats strip ─────────────────────────────────────────────────── */}
-      <div className="border-y border-white/5 bg-smoke/30">
+      <div className="relative z-[1] border-y border-white/5 bg-smoke/30">
         <div className="mx-auto max-w-7xl overflow-x-auto px-4">
           <div className="flex min-w-max items-stretch divide-x divide-white/5">
             <StatChip label="CLIPS" value={formatCount(videoCount)} />
@@ -504,7 +509,7 @@ export default async function EntityPage({
         </div>
       </div>
 
-      <main className="mx-auto max-w-7xl space-y-20 px-4 py-16">
+      <main className="relative z-[1] mx-auto max-w-7xl space-y-20 px-4 py-16">
 
         {/* ── Fan highlights ──────────────────────────────────────────── */}
         <section>
